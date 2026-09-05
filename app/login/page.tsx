@@ -3,12 +3,13 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { GoogleIcon, BeerIcon } from "@/components/Icons";
+import { GoogleIcon, BeerIcon, EyeIcon, EyeOffIcon } from "@/components/Icons";
 
 function LoginForm() {
   const [modo, setModo] = useState<"entrar" | "registrarse">("entrar");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [nombre, setNombre] = useState("");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
@@ -78,13 +79,12 @@ function LoginForm() {
       setCargando(false);
 
       if (authError) {
-        // Mensajes detallados para guiar al usuario
         if (authError.message.includes("Invalid login credentials")) {
           setError(
-            "Correo o contraseña incorrectos. Si aún no te has registrado con contraseña, haz clic abajo en '¿No tienes cuenta? Regístrate aquí' o usa el botón de Google."
+            "Correo o contraseña incorrectos. Si este usuario aún no existe en Supabase Auth, haz clic abajo en '¿No tienes cuenta? Regístrate aquí' para crearle la contraseña por primera vez."
           );
         } else if (authError.message.includes("Email not confirmed")) {
-          setError("Debes confirmar tu correo electrónico antes de iniciar sesión.");
+          setError("El correo aún no ha sido confirmado. Puedes desactivar la confirmación en Supabase Auth o confirmarlo desde tu bandeja.");
         } else {
           setError(authError.message || "No se pudo iniciar sesión.");
         }
@@ -114,7 +114,7 @@ function LoginForm() {
         router.push(redirectPath);
         router.refresh();
       } else {
-        setMensaje("✓ ¡Cuenta creada! Ya puedes iniciar sesión con tu correo y contraseña.");
+        setMensaje("✓ ¡Cuenta creada con éxito! Ya puedes iniciar sesión con tu correo y contraseña.");
         setModo("entrar");
       }
     }
@@ -181,7 +181,7 @@ function LoginForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu@correo.com"
+            placeholder="terrorgm1@gmail.com"
             required
             className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
           />
@@ -191,14 +191,28 @@ function LoginForm() {
           <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
             Contraseña
           </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
-          />
+          <div className="relative">
+            <input
+              type={mostrarPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Tu contraseña"
+              required
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl pl-4 pr-11 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => setMostrarPassword(!mostrarPassword)}
+              aria-label={mostrarPassword ? "Ocultar contraseña" : "Ver contraseña"}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-vault-100/40 hover:text-accent-light transition-colors p-1"
+            >
+              {mostrarPassword ? (
+                <EyeOffIcon className="w-5 h-5" />
+              ) : (
+                <EyeIcon className="w-5 h-5" />
+              )}
+            </button>
+          </div>
         </div>
 
         {error && (
