@@ -1,36 +1,87 @@
-import { WaveDivider } from "./WaveDivider";
+"use client";
+
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { WhatsAppIcon, SparklesIcon } from './Icons';
+import { generateGeneralWhatsAppLink } from '@/data/products';
+
+const BACKUP_HERO_IMAGE = "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1920&q=85";
 
 export function Hero() {
+  const [heroImg, setHeroImg] = useState("https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=1920&q=85");
+
   return (
-    <section id="inicio" className="relative pt-16">
-      <div className="relative h-[85vh] min-h-[520px] w-full overflow-hidden bg-bottle-dark">
-        <div className="absolute inset-0 bg-gradient-to-tr from-charcoal/80 via-bottle-dark/50 to-transparent z-10"></div>
-        <img
-          src="https://images.unsplash.com/photo-1581636625402-29b2a704ef13?q=80&w=1600&auto=format&fit=crop"
-          alt="Botellas de gaseosa frías en cajas, listas para despachar"
-          className="absolute inset-0 w-full h-full object-cover opacity-70 mix-blend-overlay"
+    <section id="inicio" className="relative min-h-[90vh] md:min-h-[94vh] flex items-center justify-center overflow-hidden pt-24 pb-16">
+      {/* Background Image with Double Gradient (Deep Black to Deep Night Purple) */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={heroImg}
+          alt="Momentos Abigail - Flores Eternas en Satín de Lujo"
+          fill
+          priority
+          unoptimized
+          onError={() => setHeroImg(BACKUP_HERO_IMAGE)}
+          className="object-cover object-center scale-105 transition-transform duration-1000"
         />
-        <div className="relative z-20 h-full max-w-6xl mx-auto px-5 md:px-6 flex flex-col justify-center items-start">
-          <span className="inline-block w-fit bg-bubble/90 backdrop-blur-sm text-soda-dark text-xs md:text-sm font-bold px-5 py-2 rounded-full mb-6 md:mb-8 shadow-sm animate-fade-in-up">
-            📍 Domicilios en Medellín
+        {/* Layer 1: Dark vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-atelier-night via-atelier-950/75 to-black/60 z-10" />
+        {/* Layer 2: Editorial purple atmospheric tint */}
+        <div className="absolute inset-0 bg-gradient-to-r from-atelier-900/60 via-atelier-night/40 to-black/70 mix-blend-multiply z-10" />
+      </div>
+
+      {/* Content Container */}
+      <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+        {/* Atelier Badge */}
+        <div className="inline-flex items-center gap-2 bg-atelier-950/80 backdrop-blur-md border border-atelier-300/30 text-atelier-100 text-xs sm:text-sm font-medium px-4 py-1.5 rounded-full mb-6 shadow-luxury">
+          <SparklesIcon className="w-4 h-4 text-atelier-300" />
+          <span className="tracking-wide">Atelier de Alta Floristería en Satín · Medellín</span>
+        </div>
+
+        {/* Hero Title with purple gradient */}
+        <h1 className="font-roboto font-black text-4xl sm:text-6xl md:text-7xl text-white tracking-tight leading-[1.1] max-w-4xl">
+          Flores eternas,{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-atelier-100 via-atelier-300 to-purple-400">
+            detalles inolvidables
           </span>
-          <h1 className="font-display font-extrabold text-5xl sm:text-6xl md:text-7xl text-white leading-tight max-w-2xl drop-shadow-lg animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-            Frías, al instante, hasta tu puerta
-          </h1>
-          <p className="text-white/95 text-lg md:text-xl mt-6 max-w-lg font-medium drop-shadow-md animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            Gaseosas, agua y bebidas de tu bodega de confianza, pedidas en un par de clics.
-          </p>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-6 text-base sm:text-xl text-sand/90 font-light max-w-2xl leading-relaxed">
+          Piezas maestras confeccionadas artesanalmente en satín importado de alto gramaje. Ramos buchones y bouquets que conservan su brillo y textura para siempre, sin marchitarse.
+        </p>
+
+        {/* Feature Pills */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs font-medium text-atelier-100/90">
+          <span className="bg-atelier-900/60 backdrop-blur-sm border border-atelier-700/40 px-3.5 py-1.5 rounded-xl">
+            ✨ Color a elección sin costo adicional
+          </span>
+          <span className="bg-atelier-900/60 backdrop-blur-sm border border-atelier-700/40 px-3.5 py-1.5 rounded-xl">
+            🚚 Envíos y contraentrega en Valle de Aburrá
+          </span>
+          <span className="bg-atelier-900/60 backdrop-blur-sm border border-atelier-700/40 px-3.5 py-1.5 rounded-xl">
+            💎 100% Satín Premium Duradero
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md">
           <a
-            href="#tienda"
-            className="mt-10 w-fit bg-soda hover:bg-soda-dark hover:scale-105 active:scale-95 transition-all duration-300 text-white font-bold px-8 md:px-10 py-4 rounded-full text-base md:text-lg shadow-lg shadow-soda/30 animate-fade-in-up flex items-center gap-2 group"
-            style={{ animationDelay: '300ms' }}
+            href="#coleccion"
+            className="w-full sm:w-auto inline-flex items-center justify-center bg-sand hover:bg-white text-atelier-950 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-sm sm:text-base border border-atelier-200"
           >
-            Ver productos
-            <i className="ti ti-arrow-right group-hover:translate-x-1 transition-transform" />
+            Explorar Colección
+          </a>
+          <a
+            href={generateGeneralWhatsAppLink()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-whatsapp hover:bg-emerald-whatsappHover text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-emerald-950/20 transition-all duration-200 active:scale-95 text-sm sm:text-base"
+          >
+            <WhatsAppIcon className="w-5 h-5 text-white" />
+            <span>Asesoría por WhatsApp</span>
           </a>
         </div>
       </div>
-      <WaveDivider color="#FAF7F0" />
     </section>
   );
 }

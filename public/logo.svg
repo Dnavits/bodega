@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7E22CE" />
+      <stop offset="100%" stop-color="#1A1624" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F3E8FF" />
+      <stop offset="100%" stop-color="#D8B4FE" />
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="94" fill="url(#purpleGrad)" stroke="#D8B4FE" stroke-width="2" />
+  
+  <!-- Outer Dotted Ring -->
+  <circle cx="100" cy="100" r="86" fill="none" stroke="#FAF5FF" stroke-width="1" stroke-dasharray="3 3" opacity="0.6" />
+  
+  <!-- Stylized Rose Silhouette / Floral Monogram -->
+  <g transform="translate(100, 92) scale(0.9)">
+    <!-- Petals -->
+    <path d="M0 -36 C18 -36 32 -20 32 0 C32 20 18 36 0 36 C-18 36 -32 20 -32 0 C-32 -20 -18 -36 0 -36 Z" fill="none" stroke="url(#goldGrad)" stroke-width="2.5" opacity="0.4" />
+    <path d="M-18 -20 C-5 -32 15 -28 22 -12 C28 5 18 22 2 26 C-14 28 -25 15 -25 0 C-25 -10 -20 -18 -18 -20 Z" fill="none" stroke="url(#goldGrad)" stroke-width="2.2" opacity="0.7" />
+    <path d="M-10 -10 C-2 -18 10 -15 14 -6 C18 4 12 14 2 16 C-8 17 -14 9 -14 0" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" />
+  </g>
+  
+  <!-- Text Label -->
+  <text x="100" y="152" font-family="'Roboto', sans-serif" font-size="12" font-weight="700" letter-spacing="3.5" fill="#FAF5FF" text-anchor="middle">MOMENTOS</text>
+  <text x="100" y="168" font-family="'Roboto', sans-serif" font-size="9" font-weight="300" letter-spacing="4" fill="#D8B4FE" text-anchor="middle">ABIGAIL</text>
+</svg>
