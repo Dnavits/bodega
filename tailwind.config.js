@@ -3,38 +3,44 @@ module.exports = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
-    "./data/**/*.{js,ts,jsx,tsx}"
+    "./lib/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
       colors: {
-        sand: "#FAF7F2",
-        atelier: {
-          50: "#FAF5FF",
-          100: "#F3E8FF",
-          200: "#E9D5FF",
-          300: "#D8B4FE",
-          500: "#A855F7",
-          600: "#9333EA",
-          700: "#7E22CE",
-          800: "#6B21A8",
-          900: "#581C87",
-          950: "#1A1624",
-          night: "#17141D",
+        vault: {
+          950: "#090D14",
+          900: "#0F172A",
+          850: "#131E35",
+          800: "#1E293B",
+          700: "#334155",
+          600: "#475569",
+          100: "#F1F5F9",
+          50: "#F8FAFC"
         },
         emerald: {
-          whatsapp: "#059669",
-          whatsappHover: "#047857",
-          whatsappLight: "#10B981"
-        }
+          DEFAULT: "#059669",
+          hover: "#047857",
+          light: "#10B981",
+          soft: "#D1FAE5"
+        },
+        amber: {
+          DEFAULT: "#D97706",
+          dark: "#B45309",
+          light: "#F59E0B",
+          soft: "#FEF3C7"
+        },
+        ice: "#0EA5E9",
+        foam: "#F8FAFC"
       },
       fontFamily: {
-        sans: ["var(--font-roboto)", "Roboto", "sans-serif"],
+        sans: ["var(--font-roboto)", "Roboto", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
         roboto: ["var(--font-roboto)", "Roboto", "sans-serif"]
       },
       boxShadow: {
-        'luxury': '0 10px 30px -5px rgba(23, 20, 29, 0.05)',
-        'luxury-hover': '0 20px 40px -10px rgba(126, 34, 206, 0.12)'
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        'card': '0 4px 20px -2px rgba(15, 23, 42, 0.08)',
+        'card-hover': '0 20px 30px -4px rgba(15, 23, 42, 0.15)'
       }
     }
   },

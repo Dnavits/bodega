@@ -1,84 +1,77 @@
 "use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { WhatsAppIcon, SparklesIcon } from './Icons';
-import { generateGeneralWhatsAppLink } from '@/data/products';
+import React, { useState } from "react";
+import { BeerIcon, WhatsAppIcon, SparklesIcon } from "@/components/Icons";
 
-const BACKUP_HERO_IMAGE = "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1920&q=85";
+const BACKUP_HERO_IMAGE = "https://images.unsplash.com/photo-1581636625402-29b2a704ef13?q=80&w=1600&auto=format&fit=crop";
 
 export function Hero() {
-  const [heroImg, setHeroImg] = useState("https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=1920&q=85");
+  const [heroImg, setHeroImg] = useState("https://images.unsplash.com/photo-1527061011665-3652c757a4d4?q=80&w=1600&auto=format&fit=crop");
 
   return (
-    <section id="inicio" className="relative min-h-[90vh] md:min-h-[94vh] flex items-center justify-center overflow-hidden pt-24 pb-16">
-      {/* Background Image with Double Gradient (Deep Black to Deep Night Purple) */}
+    <section id="inicio" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden pt-28 pb-16">
+      {/* Fondo Nocturno y Reflejos */}
       <div className="absolute inset-0 z-0">
-        <Image
+        <img
           src={heroImg}
-          alt="Momentos Abigail - Flores Eternas en Satín de Lujo"
-          fill
-          priority
-          unoptimized
+          alt="Bodega Dnavits - Bebidas Frías y Cervezas"
           onError={() => setHeroImg(BACKUP_HERO_IMAGE)}
-          className="object-cover object-center scale-105 transition-transform duration-1000"
+          className="w-full h-full object-cover object-center scale-105 transition-transform duration-1000 opacity-30"
         />
-        {/* Layer 1: Dark vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-atelier-night via-atelier-950/75 to-black/60 z-10" />
-        {/* Layer 2: Editorial purple atmospheric tint */}
-        <div className="absolute inset-0 bg-gradient-to-r from-atelier-900/60 via-atelier-night/40 to-black/70 mix-blend-multiply z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-vault-950 via-vault-950/80 to-vault-950/60 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-vault-950 via-vault-900/50 to-vault-950 z-10" />
       </div>
 
-      {/* Content Container */}
+      {/* Contenido Central */}
       <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-        {/* Atelier Badge */}
-        <div className="inline-flex items-center gap-2 bg-atelier-950/80 backdrop-blur-md border border-atelier-300/30 text-atelier-100 text-xs sm:text-sm font-medium px-4 py-1.5 rounded-full mb-6 shadow-luxury">
-          <SparklesIcon className="w-4 h-4 text-atelier-300" />
-          <span className="tracking-wide">Atelier de Alta Floristería en Satín · Medellín</span>
+        {/* Badge de Medellín */}
+        <div className="inline-flex items-center gap-2 bg-vault-900/90 border border-amber/30 text-amber-light text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full mb-6 shadow-glass">
+          <BeerIcon className="w-4 h-4 text-amber" />
+          <span>Bodega Mayorista & al Detal · Envíos Express en Medellín</span>
         </div>
 
-        {/* Hero Title with purple gradient */}
-        <h1 className="font-roboto font-black text-4xl sm:text-6xl md:text-7xl text-white tracking-tight leading-[1.1] max-w-4xl">
-          Flores eternas,{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-atelier-100 via-atelier-300 to-purple-400">
-            detalles inolvidables
+        {/* Título Principal */}
+        <h1 className="font-roboto font-black text-4xl sm:text-6xl md:text-7xl text-foam tracking-tight leading-[1.1] max-w-4xl">
+          Tus bebidas heladas,{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber via-amber-light to-yellow-200">
+            directo a tu puerta
           </span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="mt-6 text-base sm:text-xl text-sand/90 font-light max-w-2xl leading-relaxed">
-          Piezas maestras confeccionadas artesanalmente en satín importado de alto gramaje. Ramos buchones y bouquets que conservan su brillo y textura para siempre, sin marchitarse.
+        {/* Subtítulo */}
+        <p className="mt-6 text-base sm:text-xl text-vault-100/80 font-normal max-w-2xl leading-relaxed">
+          Gaseosas en botella y lata, cervezas nacionales e importadas, agua purificada, hielo y licores. Precios de bodega sin intermediarios.
         </p>
 
-        {/* Feature Pills */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs font-medium text-atelier-100/90">
-          <span className="bg-atelier-900/60 backdrop-blur-sm border border-atelier-700/40 px-3.5 py-1.5 rounded-xl">
-            ✨ Color a elección sin costo adicional
+        {/* Beneficios Clave */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs font-semibold text-vault-100/90">
+          <span className="bg-vault-900/80 border border-vault-800 px-3.5 py-1.5 rounded-xl">
+            ⚡ Entregas en menos de 45 min
           </span>
-          <span className="bg-atelier-900/60 backdrop-blur-sm border border-atelier-700/40 px-3.5 py-1.5 rounded-xl">
-            🚚 Envíos y contraentrega en Valle de Aburrá
+          <span className="bg-vault-900/80 border border-vault-800 px-3.5 py-1.5 rounded-xl">
+            ❄️ Siempre al clima o bajo cero
           </span>
-          <span className="bg-atelier-900/60 backdrop-blur-sm border border-atelier-700/40 px-3.5 py-1.5 rounded-xl">
-            💎 100% Satín Premium Duradero
+          <span className="bg-vault-900/80 border border-vault-800 px-3.5 py-1.5 rounded-xl">
+            💵 Efectivo, Nequi y Transferencia
           </span>
         </div>
 
-        {/* Action Buttons */}
+        {/* Botones de Acción */}
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md">
           <a
-            href="#coleccion"
-            className="w-full sm:w-auto inline-flex items-center justify-center bg-sand hover:bg-white text-atelier-950 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 text-sm sm:text-base border border-atelier-200"
+            href="#catalogo"
+            className="w-full sm:w-auto inline-flex items-center justify-center bg-amber hover:bg-amber-dark text-vault-950 font-black px-8 py-4 rounded-xl shadow-lg transition-all duration-200 active:scale-95 text-base"
           >
-            Explorar Colección
+            Ver Catálogo de Bebidas
           </a>
           <a
-            href={generateGeneralWhatsAppLink()}
+            href="https://wa.me/573019519391?text=Hola%20Bodega%20Dnavits%2C%20deseo%20hacer%20un%20pedido%20a%20domicilio."
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-whatsapp hover:bg-emerald-whatsappHover text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-emerald-950/20 transition-all duration-200 active:scale-95 text-sm sm:text-base"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald hover:bg-emerald-hover text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-all duration-200 active:scale-95 text-base"
           >
             <WhatsAppIcon className="w-5 h-5 text-white" />
-            <span>Asesoría por WhatsApp</span>
+            <span>Pedir por WhatsApp</span>
           </a>
         </div>
       </div>

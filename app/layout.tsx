@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
+import { CartProvider } from "@/lib/cart-context";
 
 const roboto = Roboto({
   weight: ["300", "400", "500", "700", "900"],
@@ -9,56 +10,29 @@ const roboto = Roboto({
   display: "swap",
 });
 
-const SITE_URL = "https://momentosabigail.vercel.app";
-const OG_IMAGE_URL = "https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1200&h=630&q=85";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: "Momentos Abigail | Atelier de Flores Eternas en Satín · Medellín",
-  description: "Atelier floral en Medellín especializado en flores eternas y ramos buchones en satín de lujo que nunca se marchitan. Diseño artesanal, color a elección y entregas en Valle de Aburrá.",
+  title: "Bodega Dnavits | Gaseosas, Cervezas, Aguas & Licores a Domicilio",
+  description: "Bodega mayorista y al detal en Medellín. Bebidas frías, gaseosas, agua purificada, cervezas nacionales e importadas directo a tu puerta.",
   keywords: [
-    "flores eternas",
-    "flores de satín",
-    "ramos buchones Medellín",
-    "regalos de lujo Medellín",
-    "atelier floral",
-    "rosas eternas",
-    "girasoles de satín"
+    "bodega de gaseosas",
+    "cervezas a domicilio Medellín",
+    "gaseosas por paca",
+    "bebidas frías",
+    "distribuidora de licores",
+    "agua a domicilio"
   ],
-  authors: [{ name: "Momentos Abigail Atelier Floral" }],
   openGraph: {
-    type: "website",
+    title: "Bodega Dnavits · Gaseosas y Bebidas a Domicilio",
+    description: "Pide tus bebidas frías al instante con entregas inmediatas en Medellín y el Valle de Aburrá.",
     locale: "es_CO",
-    url: SITE_URL,
-    siteName: "Momentos Abigail Atelier Floral",
-    title: "Momentos Abigail | Flores Eternas en Satín de Lujo",
-    description: "Piezas florales artesanales confeccionadas en satín de alta calidad que conservan su belleza por siempre. Atención directa en Medellín.",
-    images: [
-      {
-        url: OG_IMAGE_URL,
-        secureUrl: OG_IMAGE_URL,
-        width: 1200,
-        height: 630,
-        type: "image/jpeg",
-        alt: "Momentos Abigail - Ramo de Flores Eternas en Satín",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Momentos Abigail | Flores Eternas en Satín · Medellín",
-    description: "Ramos buchones y bouquets eternos hechos a mano en satín de lujo.",
-    images: [OG_IMAGE_URL],
-  },
-  alternates: {
-    canonical: SITE_URL,
+    type: "website",
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#17141D",
+  themeColor: "#090D14",
 };
 
 export default function RootLayout({
@@ -68,12 +42,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={roboto.variable}>
-      <head>
-        <link rel="icon" href="/logo.svg?v=2" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-icon.png?v=2" />
-      </head>
-      <body className="bg-sand text-atelier-950 font-sans min-h-screen selection:bg-atelier-200 selection:text-atelier-900">
-        {children}
+      <body className="bg-vault-950 text-foam font-sans min-h-screen selection:bg-amber/30 selection:text-amber-light antialiased">
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );
