@@ -141,7 +141,7 @@ export default function AdminProductos() {
       {/* Título y Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-light">
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent-light">
             Inventario & Catálogo
           </span>
           <h1 className="font-roboto font-black text-2xl sm:text-3xl text-foam mt-1">
@@ -160,7 +160,7 @@ export default function AdminProductos() {
       >
         <div className="flex items-center justify-between border-b border-vault-800 pb-4">
           <h2 className="font-roboto font-bold text-lg text-foam flex items-center gap-2">
-            <PlusIcon className="w-5 h-5 text-amber" />
+            <PlusIcon className="w-5 h-5 text-accent-light" />
             <span>{editandoId ? "Editar Producto Seleccionado" : "Agregar Nueva Bebida / Producto"}</span>
           </h2>
           {editandoId && (
@@ -188,7 +188,7 @@ export default function AdminProductos() {
               placeholder="Ej: Cerveza Corona Extra 355ml (Botella)"
               value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
             />
           </div>
 
@@ -200,7 +200,7 @@ export default function AdminProductos() {
             <select
               value={form.categoria}
               onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam outline-none transition-colors"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam outline-none transition-colors"
             >
               {CATEGORIAS.map((c) => (
                 <option key={c} value={c} className="bg-vault-950 text-foam">
@@ -220,7 +220,7 @@ export default function AdminProductos() {
               placeholder="https://images.unsplash.com/..."
               value={form.imagen_url}
               onChange={(e) => setForm({ ...form, imagen_url: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
             />
           </div>
 
@@ -234,7 +234,7 @@ export default function AdminProductos() {
               placeholder="Ej: 8500"
               value={form.precio}
               onChange={(e) => setForm({ ...form, precio: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
             />
           </div>
 
@@ -248,7 +248,7 @@ export default function AdminProductos() {
               placeholder="Ej: 10000"
               value={form.precio_comparacion}
               onChange={(e) => setForm({ ...form, precio_comparacion: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
             />
           </div>
 
@@ -262,7 +262,7 @@ export default function AdminProductos() {
               placeholder="Ej: 48"
               value={form.stock}
               onChange={(e) => setForm({ ...form, stock: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
             />
           </div>
 
@@ -273,7 +273,7 @@ export default function AdminProductos() {
               id="activo"
               checked={form.activo}
               onChange={(e) => setForm({ ...form, activo: e.target.checked })}
-              className="w-5 h-5 rounded bg-vault-950 border-vault-800 text-amber focus:ring-amber"
+              className="w-5 h-5 rounded bg-vault-950 border-vault-800 text-accent focus:ring-accent"
             />
             <label htmlFor="activo" className="text-xs font-semibold text-foam">
               Publicado en tienda (Visible para los clientes)
@@ -290,7 +290,7 @@ export default function AdminProductos() {
               placeholder="Presentación retornable o no retornable, grado de alcohol, temperatura de entrega..."
               value={form.descripcion}
               onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors resize-none"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors resize-none"
             />
           </div>
         </div>
@@ -310,7 +310,7 @@ export default function AdminProductos() {
         <button
           type="submit"
           disabled={cargando}
-          className="w-full sm:w-auto px-8 py-3.5 bg-amber hover:bg-amber-dark text-vault-950 font-black rounded-xl text-sm transition-all active:scale-95 disabled:opacity-60 shadow-lg"
+          className="w-full sm:w-auto px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-bold rounded-xl text-sm transition-all active:scale-95 disabled:opacity-60 shadow-lg"
         >
           {cargando ? "Guardando..." : editandoId ? "Actualizar Producto" : "Guardar y Publicar en Tienda"}
         </button>
@@ -379,7 +379,7 @@ export default function AdminProductos() {
                       <span>{p.nombre}</span>
                     </td>
                     <td className="py-3.5 text-vault-100/70">{p.categoria}</td>
-                    <td className="py-3.5 font-roboto font-bold text-amber-light">
+                    <td className="py-3.5 font-roboto font-bold text-accent-light">
                       ${p.precio.toLocaleString("es-CO")}
                     </td>
                     <td className="py-3.5">
@@ -387,7 +387,7 @@ export default function AdminProductos() {
                         p.stock <= 5
                           ? "bg-red-500/20 text-red-400 border border-red-500/30"
                           : p.stock <= 15
-                          ? "bg-amber/20 text-amber-light border border-amber/30"
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                           : "bg-emerald/20 text-emerald-light border border-emerald/30"
                       }`}>
                         {p.stock} unidades

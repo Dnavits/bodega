@@ -29,7 +29,6 @@ export default function AdminConfiguracion() {
   const [guardando, setGuardando] = useState(false);
 
   async function cargarDatos() {
-    // 1. Cargar Configuración General
     const { data: config } = await supabase
       .from("configuracion")
       .select("*")
@@ -43,7 +42,6 @@ export default function AdminConfiguracion() {
       setWhatsappPedidos(config.whatsapp_pedidos || "");
     }
 
-    // 2. Cargar Lista Blanca de Correos
     const { data: whiteData } = await supabase
       .from("admin_whitelist")
       .select("*")
@@ -127,7 +125,7 @@ export default function AdminConfiguracion() {
     <div className="space-y-10">
       {/* Encabezado */}
       <div>
-        <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-light">
+        <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent-light">
           Seguridad & Configuración
         </span>
         <h1 className="font-roboto font-black text-2xl sm:text-3xl text-foam mt-1">
@@ -141,7 +139,7 @@ export default function AdminConfiguracion() {
       {/* SECCIÓN 1: LISTA BLANCA DE CORREOS PARA EL DASHBOARD */}
       <div className="bg-vault-900 border border-vault-800 rounded-3xl p-6 sm:p-8 shadow-xl">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-amber/15 text-amber-light flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent-light flex items-center justify-center font-bold">
             <ShieldAdminIcon className="w-5 h-5" />
           </div>
           <div>
@@ -162,7 +160,7 @@ export default function AdminConfiguracion() {
               placeholder="correo@gmail.com del nuevo admin"
               value={nuevoEmail}
               onChange={(e) => setNuevoEmail(e.target.value)}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-xs sm:text-sm text-foam placeholder-vault-100/30 outline-none"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-xs sm:text-sm text-foam placeholder-vault-100/30 outline-none"
             />
           </div>
           <div className="sm:col-span-4">
@@ -171,13 +169,13 @@ export default function AdminConfiguracion() {
               placeholder="Nombre o Rol (Ej: Gerente, Bodeguero)"
               value={nuevoNombre}
               onChange={(e) => setNuevoNombre(e.target.value)}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-xs sm:text-sm text-foam placeholder-vault-100/30 outline-none"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-xs sm:text-sm text-foam placeholder-vault-100/30 outline-none"
             />
           </div>
           <div className="sm:col-span-2">
             <button
               type="submit"
-              className="w-full bg-emerald hover:bg-emerald-hover text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md"
+              className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md"
             >
               <PlusIcon className="w-4 h-4" />
               <span>Autorizar</span>
@@ -237,7 +235,7 @@ export default function AdminConfiguracion() {
         className="bg-vault-900 border border-vault-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5"
       >
         <div className="flex items-center gap-3 border-b border-vault-800 pb-4">
-          <div className="w-10 h-10 rounded-xl bg-ice/15 text-ice flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent-light flex items-center justify-center font-bold">
             <SettingsIcon className="w-5 h-5" />
           </div>
           <div>
@@ -261,7 +259,7 @@ export default function AdminConfiguracion() {
               value={bannerAnuncio}
               onChange={(e) => setBannerAnuncio(e.target.value)}
               placeholder="Ej: 🍻 Envíos fríos en menos de 45 min en Medellín · Bebidas heladas"
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
             />
           </div>
 
@@ -275,7 +273,7 @@ export default function AdminConfiguracion() {
               value={whatsappPedidos}
               onChange={(e) => setWhatsappPedidos(e.target.value)}
               placeholder="573019519391"
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
             />
           </div>
 
@@ -289,7 +287,7 @@ export default function AdminConfiguracion() {
               value={telefonoContacto}
               onChange={(e) => setTelefonoContacto(e.target.value)}
               placeholder="3019519391"
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
             />
           </div>
 
@@ -303,7 +301,7 @@ export default function AdminConfiguracion() {
               value={logoUrl}
               onChange={(e) => setLogoUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none"
             />
             {logoUrl && (
               <div className="mt-3 p-3 bg-vault-950 border border-vault-800 rounded-xl inline-block">
@@ -329,7 +327,7 @@ export default function AdminConfiguracion() {
         <button
           type="submit"
           disabled={guardando}
-          className="px-8 py-3.5 bg-amber hover:bg-amber-dark text-vault-950 font-black rounded-xl text-sm transition-all active:scale-95 disabled:opacity-60 shadow-lg"
+          className="px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-bold rounded-xl text-sm transition-all active:scale-95 disabled:opacity-60 shadow-lg"
         >
           {guardando ? "Guardando..." : "Guardar Ajustes de la Tienda"}
         </button>

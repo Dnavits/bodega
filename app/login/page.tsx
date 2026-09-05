@@ -71,11 +71,23 @@ function LoginForm() {
     setCargando(true);
 
     if (modo === "entrar") {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
       setCargando(false);
 
       if (authError) {
-        setError("Correo o contraseña incorrectos.");
+        // Mensajes detallados para guiar al usuario
+        if (authError.message.includes("Invalid login credentials")) {
+          setError(
+            "Correo o contraseña incorrectos. Si aún no te has registrado con contraseña, haz clic abajo en '¿No tienes cuenta? Regístrate aquí' o usa el botón de Google."
+          );
+        } else if (authError.message.includes("Email not confirmed")) {
+          setError("Debes confirmar tu correo electrónico antes de iniciar sesión.");
+        } else {
+          setError(authError.message || "No se pudo iniciar sesión.");
+        }
         return;
       }
 
@@ -83,10 +95,10 @@ function LoginForm() {
       router.refresh();
     } else {
       const { data, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
+        email: email.trim(),
+        password: password.trim(),
         options: {
-          data: { nombre },
+          data: { nombre: nombre.trim() },
           emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
         },
       });
@@ -102,7 +114,7 @@ function LoginForm() {
         router.push(redirectPath);
         router.refresh();
       } else {
-        setMensaje("¡Cuenta creada! Ya puedes iniciar sesión con tus credenciales.");
+        setMensaje("✓ ¡Cuenta creada! Ya puedes iniciar sesión con tu correo y contraseña.");
         setModo("entrar");
       }
     }
@@ -112,8 +124,8 @@ function LoginForm() {
     <div className="w-full max-w-md bg-vault-900/90 backdrop-blur-xl border border-vault-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative z-10">
       {/* Brand Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber/15 border border-amber/30 text-amber-light mb-4 shadow-inner">
-          <BeerIcon className="w-7 h-7" />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/15 border border-accent/30 text-accent-light mb-4 shadow-inner">
+          <BeerIcon className="w-7 h-7 text-accent" />
         </div>
         <h1 className="font-roboto font-black text-2xl sm:text-3xl text-foam tracking-tight">
           {modo === "entrar" ? "Acceder a tu Cuenta" : "Crear Cuenta"}
@@ -156,7 +168,7 @@ function LoginForm() {
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej. Carlos Mendoza"
               required
-              className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
             />
           </div>
         )}
@@ -171,7 +183,7 @@ function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@correo.com"
             required
-            className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+            className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
           />
         </div>
 
@@ -185,12 +197,12 @@ function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+            className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
           />
         </div>
 
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-medium">
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-medium leading-relaxed">
             {error}
           </div>
         )}
@@ -204,7 +216,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={cargando || googleLoading}
-          className="w-full bg-amber hover:bg-amber-dark text-vault-950 font-black py-3.5 px-4 rounded-xl shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-60 text-sm mt-2"
+          className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-60 text-sm mt-2"
         >
           {cargando ? "Validando..." : modo === "entrar" ? "Ingresar a la Bodega" : "Crear mi Cuenta"}
         </button>
@@ -219,7 +231,7 @@ function LoginForm() {
             setError("");
             setMensaje("");
           }}
-          className="text-xs font-medium text-vault-100/70 hover:text-amber-light transition-colors"
+          className="text-xs font-medium text-vault-100/70 hover:text-accent-light transition-colors"
         >
           {modo === "entrar"
             ? "¿No tienes cuenta? Regístrate aquí"
@@ -229,8 +241,8 @@ function LoginForm() {
 
       {/* Acceso a lista blanca / ayuda */}
       <div className="mt-6 pt-5 border-t border-vault-800/80 text-center">
-        <p className="text-[11px] text-vault-100/40">
-          ¿Eres administrador? Inicia sesión con tu correo de lista blanca para acceder al Panel de Control.
+        <p className="text-[11px] text-vault-100/40 leading-relaxed">
+          ¿Eres administrador? Si tu correo está en la lista blanca, inicia sesión aquí y el sistema te dará acceso directo a <code className="text-accent-light font-mono">/admin</code>.
         </p>
       </div>
     </div>
@@ -240,9 +252,9 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-vault-950 px-4 py-12 relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-72 h-72 bg-emerald/10 rounded-full blur-3xl pointer-events-none" />
-      <Suspense fallback={<div className="text-amber font-bold text-sm">Cargando...</div>}>
+      <Suspense fallback={<div className="text-accent-light font-bold text-sm">Cargando...</div>}>
         <LoginForm />
       </Suspense>
     </main>

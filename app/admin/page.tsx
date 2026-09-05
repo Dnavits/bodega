@@ -47,7 +47,7 @@ export default async function AdminDashboard() {
       {/* Encabezado del Dashboard */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-light">
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent-light">
             Panel de Control · Bodega Dnavits
           </span>
           <h1 className="font-roboto font-black text-2xl sm:text-3xl text-foam mt-1">
@@ -58,7 +58,7 @@ export default async function AdminDashboard() {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/productos"
-            className="inline-flex items-center gap-2 bg-amber hover:bg-amber-dark text-vault-950 font-bold px-4 py-2.5 rounded-xl text-xs transition-all active:scale-95 shadow-md"
+            className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all active:scale-95 shadow-md"
           >
             <PlusIcon className="w-4 h-4" />
             <span>Gestionar Productos</span>
@@ -99,7 +99,7 @@ export default async function AdminDashboard() {
           <span className="text-xs uppercase font-bold text-vault-100/50 tracking-wider">
             Alerta de Inventario
           </span>
-          <p className="font-roboto font-black text-2xl text-amber-light mt-1.5">
+          <p className="font-roboto font-black text-2xl text-accent-light mt-1.5">
             {bajoStock?.length ?? 0}
           </p>
           <span className="text-[11px] text-vault-100/40 mt-1 block">
@@ -112,8 +112,8 @@ export default async function AdminDashboard() {
           <span className="text-xs uppercase font-bold text-vault-100/50 tracking-wider">
             Sincronización
           </span>
-          <p className="font-roboto font-black text-lg text-ice mt-2 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-ice animate-pulse" />
+          <p className="font-roboto font-black text-lg text-accent-light mt-2 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-accent-light animate-pulse" />
             <span>En Vivo</span>
           </p>
           <span className="text-[11px] text-vault-100/40 mt-1 block">
@@ -161,7 +161,7 @@ export default async function AdminDashboard() {
                         {p.direccion}, {p.barrio}
                       </td>
                       <td className="py-3">
-                        <span className="inline-block bg-amber/15 text-amber-light font-bold px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider">
+                        <span className="inline-block bg-accent/15 text-accent-light font-bold px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider">
                           {p.estado || "pendiente"}
                         </span>
                       </td>

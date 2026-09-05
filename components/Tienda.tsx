@@ -14,7 +14,6 @@ const CATEGORIAS_BODEGA = [
   "Otros"
 ];
 
-// Productos de muestra premium en caso de que la tabla de Supabase esté vacía al inicio
 const PRODUCTOS_MUESTRA: ProductoBodega[] = [
   {
     id: "coca-cola-3l",
@@ -92,7 +91,6 @@ export function Tienda() {
           .order("categoria");
 
         if (error || !data || data.length === 0) {
-          // Si la base de datos está vacía, usar el catálogo de respaldo para que la página nunca esté rota
           setProductos(PRODUCTOS_MUESTRA);
         } else {
           setProductos(data);
@@ -107,8 +105,6 @@ export function Tienda() {
 
     cargarProductos();
 
-    // Suscribirse a cambios en tiempo real en la tabla de productos (Supabase Realtime)
-    // Así, cuando el admin cambia algo en el dashboard, la página se actualiza al instante sin recargar!
     const channel = supabase
       .channel("productos_realtime")
       .on(
@@ -125,7 +121,6 @@ export function Tienda() {
     };
   }, [supabase]);
 
-  // Filtrado de productos por categoría y búsqueda
   const productosFiltrados = useMemo(() => {
     return productos.filter((p) => {
       const coincideCat =
@@ -143,8 +138,8 @@ export function Tienda() {
       {/* Encabezado */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-amber-light mb-2">
-            <BeerIcon className="w-4 h-4 text-amber" />
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-accent-light mb-2">
+            <BeerIcon className="w-4 h-4 text-accent" />
             <span>Inventario en Tiempo Real</span>
           </div>
           <h2 className="font-roboto font-black text-3xl sm:text-5xl text-foam tracking-tight">
@@ -162,12 +157,12 @@ export function Tienda() {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar gaseosa, cerveza, agua..."
-            className="w-full bg-vault-900 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+            className="w-full bg-vault-900 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
           />
         </div>
       </div>
 
-      {/* Pestañas de Categoría tipo Shopify */}
+      {/* Pestañas de Categoría */}
       <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none mb-10">
         {CATEGORIAS_BODEGA.map((cat) => {
           const isSelected = categoriaActiva === cat;
@@ -178,7 +173,7 @@ export function Tienda() {
               onClick={() => setCategoriaActiva(cat)}
               className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95 ${
                 isSelected
-                  ? "bg-amber text-vault-950 shadow-lg"
+                  ? "bg-accent text-white shadow-md"
                   : "bg-vault-900 text-vault-100/70 hover:text-foam hover:bg-vault-850 border border-vault-800"
               }`}
             >
@@ -207,7 +202,7 @@ export function Tienda() {
               setCategoriaActiva("Todos");
               setBusqueda("");
             }}
-            className="mt-4 text-xs font-bold text-amber hover:underline"
+            className="mt-4 text-xs font-bold text-accent-light hover:underline"
           >
             Restablecer filtros
           </button>

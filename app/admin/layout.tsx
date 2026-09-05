@@ -8,8 +8,6 @@ import {
   TrendingUpIcon,
   SettingsIcon,
   ShieldAdminIcon,
-  LogOutIcon,
-  UserIcon
 } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
@@ -37,11 +35,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             Acceso Restringido
           </h1>
           <p className="text-xs text-vault-100/70 mb-4 leading-relaxed">
-            El correo <strong className="text-amber-light">{user.email}</strong> no se encuentra en la <strong>lista blanca de administradores</strong> autorizados para la Bodega Dnavits.
+            El correo <strong className="text-accent-light">{user.email}</strong> no se encuentra en la <strong>lista blanca de administradores</strong> autorizados para la Bodega Dnavits.
           </p>
           <div className="p-3.5 bg-vault-950 border border-vault-800 rounded-2xl text-[11px] text-vault-100/50 mb-6 text-left space-y-1">
             <p>💡 <strong>¿Cómo autorizar este correo?</strong></p>
-            <p>1. Ve a Supabase &gt; Table Editor &gt; <code className="text-amber">admin_whitelist</code>.</p>
+            <p>1. Ve a Supabase &gt; Table Editor &gt; <code className="text-accent-light">admin_whitelist</code>.</p>
             <p>2. Agrega una fila con tu correo exacto y <code className="text-emerald-light">activo = true</code>.</p>
           </div>
           <div className="space-y-2">
@@ -53,7 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </Link>
             <Link
               href="/login"
-              className="block w-full py-2.5 text-xs text-vault-100/50 hover:text-amber-light transition-colors"
+              className="block w-full py-2.5 text-xs text-vault-100/50 hover:text-accent-light transition-colors"
             >
               Iniciar sesión con otra cuenta
             </Link>
@@ -70,14 +68,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {/* Header del Sidebar */}
         <div className="p-5 border-b border-vault-800 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-amber flex items-center justify-center text-vault-950 font-black">
-              <BeerIcon className="w-5 h-5 text-vault-950" />
+            <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center text-white font-black shadow-md">
+              <BeerIcon className="w-5 h-5 text-white" />
             </div>
             <div>
               <span className="font-roboto font-black text-sm text-foam block leading-tight">
                 BODEGA DNAVITS
               </span>
-              <span className="text-[10px] text-amber-light font-bold uppercase tracking-wider">
+              <span className="text-[10px] text-accent-light font-bold uppercase tracking-wider">
                 Panel Admin
               </span>
             </div>
@@ -90,7 +88,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             href="/admin"
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-vault-100/80 hover:text-foam hover:bg-vault-850 transition-colors"
           >
-            <TrendingUpIcon className="w-4 h-4 text-amber" />
+            <TrendingUpIcon className="w-4 h-4 text-accent-light" />
             <span>Dashboard & Ventas</span>
           </Link>
 
@@ -106,7 +104,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             href="/admin/configuracion"
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-vault-100/80 hover:text-foam hover:bg-vault-850 transition-colors"
           >
-            <SettingsIcon className="w-4 h-4 text-ice" />
+            <SettingsIcon className="w-4 h-4 text-accent-light" />
             <span>Ajustes & Lista Blanca</span>
           </Link>
         </nav>
@@ -115,7 +113,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="p-4 border-t border-vault-800 bg-vault-950/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-emerald/20 border border-emerald/40 text-emerald-light flex items-center justify-center font-bold text-xs uppercase shrink-0">
+              <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/40 text-accent-light flex items-center justify-center font-bold text-xs uppercase shrink-0">
                 {user.email?.[0] || "A"}
               </div>
               <div className="min-w-0">

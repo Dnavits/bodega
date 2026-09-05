@@ -23,17 +23,14 @@ export function Navbar({ logoUrl, bannerAnuncio }: NavbarProps) {
   const { count, setIsOpen } = useCart();
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [menuAbierto, setMenuAbierto] = useState(false);
   const [userMenuAbierto, setUserMenuAbierto] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    // 1. Obtener usuario actual
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
       if (user) {
-        // Chequear lista blanca
         const { data: whiteRow } = await supabase
           .from("admin_whitelist")
           .select("activo")
@@ -41,7 +38,6 @@ export function Navbar({ logoUrl, bannerAnuncio }: NavbarProps) {
           .eq("activo", true)
           .single();
 
-        // Chequear perfil
         const { data: profileRow } = await supabase
           .from("profiles")
           .select("role")
@@ -54,7 +50,6 @@ export function Navbar({ logoUrl, bannerAnuncio }: NavbarProps) {
       }
     });
 
-    // 2. Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         const currentUser = session?.user || null;
@@ -94,70 +89,77 @@ export function Navbar({ logoUrl, bannerAnuncio }: NavbarProps) {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40">
-      {/* Top Banner de Anuncios */}
-      <div className="bg-amber-dark text-vault-950 text-xs font-bold py-2 px-4 text-center tracking-wider border-b border-amber/40 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 w-full z-40">
+      {/* Top Banner 100% Ancho */}
+      <div className="w-full bg-vault-900 border-b border-vault-800 text-vault-100/70 text-xs font-semibold py-2 px-4 text-center tracking-wider">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-accent-light animate-pulse" />
           <span>
-            {bannerAnuncio || "🍻 Bebidas heladas al instante en Medellín · Pedidos por WhatsApp y Web"}
+            {bannerAnuncio || "🍻 Bodega Dnavits · Gaseosas, Cervezas y Bebidas Frías a Domicilio en Medellín"}
           </span>
         </div>
       </div>
 
-      {/* Barra de Navegación Principal */}
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="bg-vault-900/85 backdrop-blur-xl border border-vault-800 rounded-2xl px-5 py-3.5 flex items-center justify-between shadow-2xl">
+      {/* Barra de Navegación 100% Ancho con Elementos Centrados */}
+      <nav className="w-full bg-vault-950/90 backdrop-blur-md border-b border-vault-800/80 transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           {/* Logo y Marca */}
           <Link href="/" className="flex items-center gap-3 group">
             {logoUrl ? (
-              <img src={logoUrl} alt="Bodega Dnavits" className="h-10 w-auto rounded-xl" />
+              <img src={logoUrl} alt="Bodega Dnavits" className="h-9 w-auto rounded-xl" />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber to-amber-light flex items-center justify-center text-vault-950 font-black shadow-md">
-                <BeerIcon className="w-6 h-6 text-vault-950" />
+              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-105">
+                <BeerIcon className="w-5 h-5 text-white" />
               </div>
             )}
             <div className="flex flex-col">
-              <span className="font-roboto font-black text-lg sm:text-xl text-foam tracking-tight leading-none group-hover:text-amber-light transition-colors">
+              <span className="font-roboto font-black text-lg sm:text-xl text-foam tracking-tight leading-none group-hover:text-accent-light transition-colors">
                 BODEGA DNAVITS
               </span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-vault-100/50 font-semibold mt-1">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-accent-light font-semibold mt-1">
                 Licores & Bebidas Heladas
               </span>
             </div>
           </Link>
 
           {/* Menú Central */}
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-vault-100/80">
-            <a href="#catalogo" className="hover:text-amber-light transition-colors">
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-vault-100/75">
+            <a href="#catalogo" className="hover:text-accent-light transition-colors">
               Catálogo de Bebidas
             </a>
-            <a href="#promociones" className="hover:text-amber-light transition-colors">
-              Promociones
-            </a>
-            <a href="#contacto" className="hover:text-amber-light transition-colors">
+            <a href="#contacto" className="hover:text-accent-light transition-colors">
               Ubicación & Domicilios
+            </a>
+            <a
+              href="https://wa.me/573019519391"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-emerald-light transition-colors flex items-center gap-1.5"
+            >
+              <WhatsAppIcon className="w-4 h-4 text-emerald-light" />
+              <span>WhatsApp Directo</span>
             </a>
           </div>
 
-          {/* Acciones del Usuario & Carrito */}
+          {/* Acciones: Usuario & Carrito */}
           <div className="flex items-center gap-3">
-            {/* Estado de Usuario / Auth */}
+            {/* Estado de Usuario */}
             {user ? (
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setUserMenuAbierto(!userMenuAbierto)}
-                  className="flex items-center gap-2 bg-vault-850 hover:bg-vault-800 border border-vault-700 text-foam text-xs font-semibold px-3 py-2 rounded-xl transition-all"
+                  className="flex items-center gap-2 bg-vault-900 hover:bg-vault-850 border border-vault-800 text-foam text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all"
                 >
-                  <div className="w-6 h-6 rounded-full bg-amber text-vault-950 flex items-center justify-center font-bold text-xs uppercase">
+                  <div className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center font-bold text-xs uppercase">
                     {user.user_metadata?.full_name?.[0] || user.email?.[0] || "U"}
                   </div>
-                  <span className="hidden sm:inline max-w-[110px] truncate">
+                  <span className="hidden sm:inline max-w-[120px] truncate">
                     {user.user_metadata?.full_name || user.email}
                   </span>
                 </button>
 
-                {/* Dropdown del Usuario */}
+                {/* Dropdown Menú */}
                 {userMenuAbierto && (
                   <div className="absolute right-0 mt-2 w-56 bg-vault-900 border border-vault-800 rounded-2xl shadow-2xl p-2 z-50 animate-fade-in-up">
                     <div className="px-3 py-2 border-b border-vault-800 text-xs text-vault-100/60">
@@ -169,9 +171,9 @@ export function Navbar({ logoUrl, bannerAnuncio }: NavbarProps) {
                       <Link
                         href="/admin"
                         onClick={() => setUserMenuAbierto(false)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-amber-light hover:bg-vault-800 transition-colors mt-1"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-accent-light hover:bg-vault-850 transition-colors mt-1"
                       >
-                        <ShieldAdminIcon className="w-4 h-4 text-amber" />
+                        <ShieldAdminIcon className="w-4 h-4 text-accent" />
                         <span>Panel Administrador</span>
                       </Link>
                     )}
@@ -190,23 +192,23 @@ export function Navbar({ logoUrl, bannerAnuncio }: NavbarProps) {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-2 bg-vault-850 hover:bg-vault-800 border border-vault-700 text-foam text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all"
+                className="flex items-center gap-2 bg-vault-900 hover:bg-vault-850 border border-vault-800 text-foam text-xs font-bold px-4 py-2.5 rounded-xl transition-all hover:border-accent/40"
               >
-                <UserIcon className="w-4 h-4 text-amber-light" />
+                <UserIcon className="w-4 h-4 text-accent-light" />
                 <span className="hidden sm:inline">Iniciar Sesión</span>
               </Link>
             )}
 
-            {/* Botón del Carrito */}
+            {/* Carrito */}
             <button
               onClick={() => setIsOpen(true)}
               aria-label="Ver carrito de compras"
-              className="relative flex items-center gap-2 bg-amber hover:bg-amber-dark text-vault-950 text-xs sm:text-sm font-black px-4 py-2.5 rounded-xl shadow-lg transition-all active:scale-95"
+              className="relative flex items-center gap-2 bg-accent hover:bg-accent-hover text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95"
             >
-              <CartIcon className="w-4 h-4 sm:w-5 sm:h-5 text-vault-950" />
+              <CartIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               <span className="hidden sm:inline">Carrito</span>
               {count > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                <span className="absolute -top-1.5 -right-1.5 bg-emerald text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md">
                   {count}
                 </span>
               )}

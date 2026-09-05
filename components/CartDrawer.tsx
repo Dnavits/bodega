@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/lib/cart-context";
-import { CloseIcon, TrashIcon, PlusIcon, WhatsAppIcon } from "@/components/Icons";
+import { CloseIcon, TrashIcon, WhatsAppIcon } from "@/components/Icons";
 import Link from "next/link";
 
 export function CartDrawer() {
@@ -29,7 +29,7 @@ export function CartDrawer() {
         <div className="flex items-center justify-between px-6 py-5 border-b border-vault-800 bg-vault-900/90">
           <div className="flex items-center gap-2.5">
             <h2 className="font-roboto font-black text-lg text-foam">Tu Pedido</h2>
-            <span className="text-xs bg-amber/20 text-amber-light font-bold px-2 py-0.5 rounded-md">
+            <span className="text-xs bg-accent/20 text-accent-light font-bold px-2 py-0.5 rounded-md">
               {items.length} {items.length === 1 ? "ítem" : "ítems"}
             </span>
           </div>
@@ -63,7 +63,7 @@ export function CartDrawer() {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-bold text-foam truncate">{item.nombre}</p>
-                  <p className="text-xs font-semibold text-amber-light mt-0.5">
+                  <p className="text-xs font-semibold text-accent-light mt-0.5">
                     ${(item.precio * item.cantidad).toLocaleString("es-CO")}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
@@ -94,7 +94,7 @@ export function CartDrawer() {
           )}
         </div>
 
-        {/* Footer del Carrito con Opciones de Checkout */}
+        {/* Footer del Carrito */}
         {items.length > 0 && (
           <div className="p-6 border-t border-vault-800 bg-vault-950/80 space-y-3">
             <div className="flex justify-between items-baseline mb-3">
@@ -107,7 +107,7 @@ export function CartDrawer() {
             <Link
               href="/checkout"
               onClick={() => setIsOpen(false)}
-              className="block w-full text-center bg-amber hover:bg-amber-dark text-vault-950 font-black py-3.5 rounded-xl shadow-lg transition-all duration-200 active:scale-95 text-sm"
+              className="block w-full text-center bg-accent hover:bg-accent-hover text-white font-bold py-3.5 rounded-xl shadow-md transition-all duration-200 active:scale-95 text-sm"
             >
               Proceder al Checkout (Web)
             </Link>

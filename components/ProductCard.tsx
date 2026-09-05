@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { CartIcon, PlusIcon } from "@/components/Icons";
+import { PlusIcon } from "@/components/Icons";
 
 export type ProductoBodega = {
   id: string;
@@ -38,7 +38,7 @@ export function ProductCard({ producto }: { producto: ProductoBodega }) {
   }
 
   return (
-    <div className="group relative bg-vault-900 border border-vault-800 hover:border-amber/40 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
+    <div className="group relative bg-vault-900 border border-vault-800 hover:border-accent/40 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
       {/* Imagen del Producto */}
       <div className="relative aspect-square w-full bg-vault-950 overflow-hidden flex items-center justify-center p-4">
         <img
@@ -72,7 +72,7 @@ export function ProductCard({ producto }: { producto: ProductoBodega }) {
       {/* Cuerpo de la Tarjeta */}
       <div className="p-5 flex flex-col flex-1 justify-between bg-vault-900">
         <div>
-          <h3 className="font-roboto font-bold text-base text-foam group-hover:text-amber-light transition-colors line-clamp-1">
+          <h3 className="font-roboto font-bold text-base text-foam group-hover:text-accent-light transition-colors line-clamp-1">
             {producto.nombre}
           </h3>
           {producto.descripcion && (
@@ -107,7 +107,7 @@ export function ProductCard({ producto }: { producto: ProductoBodega }) {
             className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
               agregadoAnim
                 ? "bg-emerald text-white"
-                : "bg-amber hover:bg-amber-dark text-vault-950 shadow-md"
+                : "bg-accent hover:bg-accent-hover text-white shadow-md"
             }`}
           >
             {agregadoAnim ? (

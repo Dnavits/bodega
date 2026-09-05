@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { BeerIcon, WhatsAppIcon, CheckIcon } from "@/components/Icons";
+import { BeerIcon, WhatsAppIcon } from "@/components/Icons";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -36,7 +36,7 @@ export default function CheckoutPage() {
     return (
       <main className="min-h-screen bg-vault-950 flex items-center justify-center p-6 text-foam">
         <div className="max-w-md w-full bg-vault-900 border border-vault-800 rounded-3xl p-8 text-center shadow-xl">
-          <div className="w-14 h-14 rounded-2xl bg-amber/15 text-amber mx-auto flex items-center justify-center mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-accent/15 text-accent mx-auto flex items-center justify-center mb-4">
             <BeerIcon className="w-7 h-7" />
           </div>
           <h1 className="font-roboto font-black text-2xl text-foam mb-2">Tu Carrito está Vacío</h1>
@@ -45,7 +45,7 @@ export default function CheckoutPage() {
           </p>
           <Link
             href="/"
-            className="block w-full py-3.5 bg-amber hover:bg-amber-dark text-vault-950 font-black rounded-xl text-sm transition-all shadow-md"
+            className="block w-full py-3.5 bg-accent hover:bg-accent-hover text-white font-bold rounded-xl text-sm transition-all shadow-md"
           >
             Ir al Catálogo de Bebidas
           </Link>
@@ -58,7 +58,7 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-vault-950 py-12 px-4 sm:px-6 lg:px-8 text-foam">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-2 text-amber-light text-xs font-bold mb-3 hover:underline">
+          <Link href="/" className="inline-flex items-center gap-2 text-accent-light text-xs font-bold mb-3 hover:underline">
             ← Volver a la Bodega
           </Link>
           <h1 className="font-roboto font-black text-3xl sm:text-4xl text-foam tracking-tight">
@@ -84,7 +84,7 @@ export default function CheckoutPage() {
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 placeholder="Tu nombre y apellido"
-                className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
+                className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
               />
             </div>
 
@@ -96,7 +96,7 @@ export default function CheckoutPage() {
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
                 placeholder="301 000 0000"
-                className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
+                className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
               />
             </div>
 
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
                   value={direccion}
                   onChange={(e) => setDireccion(e.target.value)}
                   placeholder="Calle / Cra / Apto"
-                  className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
+                  className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
                 />
               </div>
               <div>
@@ -120,7 +120,7 @@ export default function CheckoutPage() {
                   value={barrio}
                   onChange={(e) => setBarrio(e.target.value)}
                   placeholder="Laureles, Poblado, etc."
-                  className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
+                  className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none"
                 />
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function CheckoutPage() {
                     onClick={() => setMetodoPago(m)}
                     className={`py-2 px-2 text-xs font-bold rounded-xl border capitalize transition-colors ${
                       metodoPago === m
-                        ? "bg-amber text-vault-950 border-amber"
+                        ? "bg-accent text-white border-accent"
                         : "bg-vault-950 text-vault-100/70 border-vault-800 hover:border-vault-700"
                     }`}
                   >
@@ -152,13 +152,13 @@ export default function CheckoutPage() {
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
                 placeholder="¿Con cuánto vas a pagar? ¿Alguna marca específica?"
-                className="w-full bg-vault-950 border border-vault-800 focus:border-amber rounded-xl px-4 py-2 text-xs text-foam placeholder-vault-100/30 outline-none resize-none"
+                className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2 text-xs text-foam placeholder-vault-100/30 outline-none resize-none"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full mt-4 flex items-center justify-center gap-2 bg-emerald hover:bg-emerald-hover text-white font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 text-sm"
+              className="w-full mt-4 flex items-center justify-center gap-2 bg-emerald hover:bg-emerald-hover text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 text-sm"
             >
               <WhatsAppIcon className="w-5 h-5" />
               <span>Enviar Pedido por WhatsApp</span>
@@ -178,7 +178,7 @@ export default function CheckoutPage() {
                     <p className="font-bold text-foam">{i.nombre}</p>
                     <p className="text-vault-100/50">{i.cantidad} x ${i.precio.toLocaleString("es-CO")}</p>
                   </div>
-                  <span className="font-roboto font-bold text-amber-light">
+                  <span className="font-roboto font-bold text-accent-light">
                     ${(i.precio * i.cantidad).toLocaleString("es-CO")}
                   </span>
                 </div>
@@ -196,7 +196,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm font-bold text-foam pt-2 border-t border-vault-800">
                 <span>Total Estimado</span>
-                <span className="font-roboto font-black text-amber-light text-base">${total.toLocaleString("es-CO")}</span>
+                <span className="font-roboto font-black text-accent-light text-base">${total.toLocaleString("es-CO")}</span>
               </div>
             </div>
           </div>
