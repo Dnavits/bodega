@@ -38,7 +38,7 @@ const DEFAULT_CONFIG: SiteConfig = {
   hero_titulo:               "Tus bebidas heladas,",
   hero_subtitulo_rainbow:    "en minutos",
   hero_descripcion:          "Gaseosas, cervezas, aguas y licores directo de la bodega a tu puerta. Precios directos, sin intermediarios, siempre fríos.",
-  hero_features:             ["⚡ Entrega en <45 min", "❄️ Siempre frío", "💳 Nequi · Efectivo · Transferencia"],
+  hero_features:             ["⚡ Entrega en 1-2 días hábiles", "❄️ Siempre frío", "💳 Nequi · Efectivo · Transferencia"],
   mostrar_whatsapp_flotante: true,
 };
 

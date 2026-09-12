@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/lib/cart-context";
-import { CloseIcon, TrashIcon, WhatsAppIcon } from "@/components/Icons";
+import { CloseIcon, TrashIcon } from "@/components/Icons";
 import Link from "next/link";
 
 interface CartDrawerProps {
@@ -114,19 +114,11 @@ export function CartDrawer({ whatsapp, nombreBodega }: CartDrawerProps) {
             <Link
               href="/checkout"
               onClick={() => setIsOpen(false)}
-              className="block w-full text-center bg-ink hover:bg-ink-light text-white font-bold py-3 rounded-btn shadow-portrait transition-all active:scale-95 text-sm"
+              className="flex items-center justify-center gap-2 w-full bg-ink hover:bg-ink-light text-white font-bold py-3.5 rounded-btn shadow-portrait transition-all active:scale-95 text-sm group mt-3"
             >
-              Checkout (guardar pedido)
+              <span>Continuar con el Pedido</span>
+              <span className="transition-transform group-hover:translate-x-1 font-bold">→</span>
             </Link>
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full bg-emerald hover:bg-emerald-hover text-white font-bold py-3 rounded-btn shadow-portrait transition-all active:scale-95 text-sm"
-            >
-              <WhatsAppIcon className="w-4 h-4" />
-              Solo WhatsApp (rápido)
-            </a>
           </div>
         )}
       </div>

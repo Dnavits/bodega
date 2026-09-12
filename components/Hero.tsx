@@ -15,7 +15,7 @@ interface HeroProps {
 }
 
 const DEFAULT_FEATURES = [
-  "⚡ Entrega en <45 min",
+  "⚡ Entrega en 1-2 días hábiles",
   "❄️ Siempre frío",
   "💳 Nequi · Efectivo · Transferencia",
 ];

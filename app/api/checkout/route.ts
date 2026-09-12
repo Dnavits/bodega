@@ -56,25 +56,43 @@ export async function POST(request: Request) {
     }
   }
 
-  // Insertar en la tabla 'pedidos' sin campos inexistentes
-  const { data: pedido, error: pedidoError } = await supabase
+  // Insertar en la tabla 'pedidos' con fallback si metodo_pago no existe aún en el schema
+  const payloadPedido: Record<string, any> = {
+    user_id: user?.id || null,
+    total,
+    estado: "pendiente",
+    metodo_pago: metodo_pago || "efectivo",
+    nombre,
+    telefono,
+    email: email || user?.email || null,
+    direccion: texto,
+    detalle_direccion: detalle || null,
+    barrio,
+    ciudad: ciudad || "Medellín",
+    notas: notas || null,
+  };
+
+  let { data: pedido, error: pedidoError } = await supabase
     .from("pedidos")
-    .insert({
-      user_id: user?.id || null,
-      total,
-      estado: "pendiente",
-      metodo_pago: metodo_pago || "efectivo",
-      nombre,
-      telefono,
-      email: email || user?.email || null,
-      direccion: texto,
-      detalle_direccion: detalle || null,
-      barrio,
-      ciudad: ciudad || "Medellín",
-      notas: notas || null,
-    })
+    .insert(payloadPedido)
     .select()
     .single();
+
+  // Si la columna metodo_pago aún no existe en la base de datos, reintentar guardándolo dentro de notas
+  if (pedidoError && (pedidoError.message?.includes("metodo_pago") || pedidoError.code === "PGRST204")) {
+    const fallbackPayload = { ...payloadPedido };
+    delete fallbackPayload.metodo_pago;
+    fallbackPayload.notas = `[Método de pago: ${(metodo_pago || "efectivo").toUpperCase()}] ${notas || ""}`.trim();
+
+    const retry = await supabase
+      .from("pedidos")
+      .insert(fallbackPayload)
+      .select()
+      .single();
+
+    pedido = retry.data;
+    pedidoError = retry.error;
+  }
 
   if (pedidoError || !pedido) {
     return NextResponse.json(
@@ -105,7 +123,7 @@ export async function POST(request: Request) {
       `<p>Hola ${nombre},</p>
        <p>Tu pedido #${pedido.numero_orden || pedido.id.slice(0, 6)} por $${total.toLocaleString("es-CO")} fue recibido correctamente.</p>
        <p>Dirección de entrega: ${texto}, ${barrio}, ${ciudad || "Medellín"}.</p>
-       <p>Tiempo de entrega: menos de 45 minutos.</p>
+       <p>Tiempo estimado de entrega: 1 a 2 días hábiles.</p>
        <p>¡Gracias por elegir ${nombreBodegaEmail}!</p>`
     );
   }

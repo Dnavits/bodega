@@ -149,7 +149,7 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-ink-muted">Tiempo Estimado:</span>
-              <strong className="text-emerald font-semibold">&lt; 45 minutos</strong>
+              <strong className="text-emerald font-semibold">1 a 2 días hábiles</strong>
             </div>
           </div>
 
@@ -207,7 +207,7 @@ export default function CheckoutPage() {
             Finalizar tu Pedido
           </h1>
           <p className="text-xs text-ink-muted mt-1">
-            Entrega express en menos de 45 minutos en Medellín.
+            Entrega express de 1 a 2 días hábiles en Medellín y Valle de Aburrá.
           </p>
         </div>
 
@@ -219,7 +219,7 @@ export default function CheckoutPage() {
             </h2>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
                 Nombre Completo *
               </label>
               <input
@@ -232,10 +232,10 @@ export default function CheckoutPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-end">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
-                  Teléfono / WhatsApp *
+                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
+                  WhatsApp / Celular *
                 </label>
                 <input
                   type="tel"
@@ -247,8 +247,8 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
-                  Correo (Opcional)
+                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
+                  Correo Electrónico (Opcional)
                 </label>
                 <input
                   type="email"
@@ -260,10 +260,10 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-end">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
-                  Dirección *
+                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
+                  Dirección de Entrega *
                 </label>
                 <input
                   type="text"
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
                   Barrio / Sector *
                 </label>
                 <input
@@ -365,8 +365,8 @@ export default function CheckoutPage() {
                 <span className="font-bold text-ink">${total.toLocaleString("es-CO")}</span>
               </div>
               <div className="flex justify-between">
-                <span>Domicilio Express</span>
-                <span className="text-emerald font-semibold">Calculado al entregar</span>
+                <span>Entrega Express</span>
+                <span className="text-emerald font-semibold">1 a 2 días hábiles</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-ink pt-2 border-t border-divider">
                 <span>Total</span>

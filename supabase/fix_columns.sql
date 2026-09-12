@@ -29,5 +29,13 @@ alter table public.productos add column if not exists precio_comparacion integer
 alter table public.productos add column if not exists sku text;
 alter table public.productos add column if not exists destacado boolean default false;
 
--- 3. Recargar la memoria del servidor de inmediato
+-- 3. Columnas en pedidos (órdenes de compra)
+alter table public.pedidos add column if not exists metodo_pago text default 'efectivo';
+alter table public.pedidos add column if not exists notas text;
+alter table public.pedidos add column if not exists detalle_direccion text;
+alter table public.pedidos add column if not exists barrio text default '';
+alter table public.pedidos add column if not exists ciudad text default 'Medellín';
+alter table public.pedidos add column if not exists numero_orden serial;
+
+-- 4. Recargar la memoria del servidor de inmediato
 notify pgrst, 'reload schema';
