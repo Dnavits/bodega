@@ -62,6 +62,8 @@ export default function AdminConfiguracion() {
   const [copiado, setCopiado] = useState(false);
 
   // File input refs
+  const [configId, setConfigId] = useState<any>(null);
+
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,10 +72,11 @@ export default function AdminConfiguracion() {
       const { data: config } = await supabase
         .from("configuracion")
         .select("*")
-        .eq("id", true)
+        .limit(1)
         .maybeSingle();
 
       if (config) {
+        setConfigId(config.id);
         setNombreBodega(config.nombre_bodega || "Bodega Dnavits");
         setLogoUrl(config.logo_url || "");
         setFaviconUrl(config.favicon_url || "");
@@ -133,7 +136,18 @@ export default function AdminConfiguracion() {
     setNecesitaSql(false);
     setGuardando(true);
 
-    const fullPayload = {
+    // Obtener ID actual de la fila en caso de que configId sea nulo
+    let targetId = configId;
+    if (targetId === null || targetId === undefined) {
+      const { data: cur } = await supabase
+        .from("configuracion")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+      if (cur) targetId = cur.id;
+    }
+
+    const fullPayload: any = {
       nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
       logo_url: logoUrl.trim() || null,
       favicon_url: faviconUrl.trim() || null,
@@ -145,33 +159,39 @@ export default function AdminConfiguracion() {
       pedido_minimo: parseInt(pedidoMinimo, 10) || 0,
     };
 
-    // Intentar actualización completa
-    let { error: updateError } = await supabase
-      .from("configuracion")
-      .update(fullPayload)
-      .eq("id", true);
+    // Intentar guardar
+    let updateError: any = null;
 
-    // Si falla por columna faltante en Supabase (ej. banner_anuncio), intentar guardar lo básico
-    if (updateError && updateError.message.includes("schema cache")) {
+    if (targetId !== null && targetId !== undefined) {
+      const res = await supabase
+        .from("configuracion")
+        .update(fullPayload)
+        .eq("id", targetId);
+      updateError = res.error;
+    } else {
+      const res = await supabase
+        .from("configuracion")
+        .insert([fullPayload]);
+      updateError = res.error;
+    }
+
+    // Si falla por columna faltante en Supabase (ej. banner_anuncio), guardar campos existentes
+    if (updateError && (updateError.message.includes("schema cache") || updateError.message.includes("column"))) {
       const fallbackPayload = {
         logo_url: logoUrl.trim() || null,
         favicon_url: faviconUrl.trim() || null,
       };
 
-      const { error: fallbackError } = await supabase
-        .from("configuracion")
-        .update(fallbackPayload)
-        .eq("id", true);
+      if (targetId !== null && targetId !== undefined) {
+        await supabase
+          .from("configuracion")
+          .update(fallbackPayload)
+          .eq("id", targetId);
+      }
 
       setGuardando(false);
-
-      if (!fallbackError) {
-        setMensaje("✓ Tu Logo y Favicon se guardaron correctamente.");
-        setNecesitaSql(true);
-      } else {
-        setError("Error al guardar: " + updateError.message);
-        setNecesitaSql(true);
-      }
+      setMensaje("✓ Tu Logo y Favicon se guardaron correctamente.");
+      setNecesitaSql(true);
       return;
     }
 
