@@ -2,14 +2,16 @@ import { BeerIcon, WhatsAppIcon } from "@/components/Icons";
 import { WHATSAPP_NUMBER, BODEGA_CIUDAD } from "@/lib/constants";
 
 interface BodegaFooterProps {
+  nombreBodega?: string | null;
   whatsapp?: string | null;
   telefono?: string | null;
   direccion?: string | null;
 }
 
-export function BodegaFooter({ whatsapp, telefono, direccion }: BodegaFooterProps) {
+export function BodegaFooter({ nombreBodega, whatsapp, telefono, direccion }: BodegaFooterProps) {
   const wa = whatsapp || WHATSAPP_NUMBER;
   const waUrl = `https://wa.me/${wa}`;
+  const nombre = nombreBodega || "Bodega Dnavits";
 
   return (
     <footer id="contacto" className="bg-surface border-t border-hairline text-ink-muted pt-16 pb-12">
@@ -21,8 +23,8 @@ export function BodegaFooter({ whatsapp, telefono, direccion }: BodegaFooterProp
               <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center text-white font-black shadow-portrait">
                 <BeerIcon className="w-5 h-5 text-white" />
               </div>
-              <span className="font-inter font-black text-xl text-ink tracking-tight">
-                BODEGA DNAVITS
+              <span className="font-inter font-black text-xl text-ink tracking-tight uppercase">
+                {nombre}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-ink-muted leading-relaxed max-w-sm">
@@ -82,7 +84,7 @@ export function BodegaFooter({ whatsapp, telefono, direccion }: BodegaFooterProp
         </div>
 
         <div className="pt-8 border-t border-divider text-center text-xs text-ink-faint flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} Bodega Dnavits. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} {nombre}. Todos los derechos reservados.</p>
           <p>{BODEGA_CIUDAD}, Colombia · Distribución de Bebidas</p>
         </div>
       </div>

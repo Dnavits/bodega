@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getSiteConfig } from "@/lib/site-config";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
@@ -8,12 +9,30 @@ import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata(): Promise<Metadata> {
+  const config = await getSiteConfig();
+  const nombre = config.nombre_bodega || "Bodega Dnavits";
+
+  return {
+    title: `${nombre} | Gaseosas, Cervezas, Aguas & Licores a Domicilio`,
+    description: `${nombre} en Medellín. Bebidas frías, gaseosas por paca, cervezas nacionales e importadas y licores a domicilio.`,
+    icons: config.favicon_url
+      ? {
+          icon: config.favicon_url,
+          shortcut: config.favicon_url,
+          apple: config.favicon_url,
+        }
+      : undefined,
+  };
+}
+
 export default async function HomePage() {
   const config = await getSiteConfig();
 
   return (
     <>
       <Navbar
+        nombreBodega={config.nombre_bodega}
         logoUrl={config.logo_url}
         bannerAnuncio={config.banner_anuncio}
         whatsappPedidos={config.whatsapp_pedidos}
@@ -23,6 +42,7 @@ export default async function HomePage() {
         <Tienda />
       </main>
       <BodegaFooter
+        nombreBodega={config.nombre_bodega}
         whatsapp={config.whatsapp_pedidos}
         telefono={config.telefono_contacto}
         direccion={config.direccion_bodega}

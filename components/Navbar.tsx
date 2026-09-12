@@ -11,12 +11,13 @@ import {
 import { WHATSAPP_URL } from "@/lib/constants";
 
 interface NavbarProps {
+  nombreBodega?:    string | null;
   logoUrl?:         string | null;
   bannerAnuncio?:   string | null;
   whatsappPedidos?: string | null;
 }
 
-export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps) {
+export function Navbar({ nombreBodega, logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps) {
   const { count, setIsOpen } = useCart();
   const [user,            setUser]            = useState<any>(null);
   const [displayName,     setDisplayName]     = useState("");
@@ -143,15 +144,15 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             {logoUrl ? (
-              <img src={logoUrl} alt="Bodega Dnavits" className="h-8 w-auto rounded-xl object-contain" />
+              <img src={logoUrl} alt={nombreBodega || "Bodega Dnavits"} className="h-8 w-auto rounded-xl object-contain" />
             ) : (
               <div className="w-9 h-9 rounded-xl bg-ink flex items-center justify-center shrink-0 group-hover:bg-ink-light transition-colors shadow-portrait">
                 <BeerIcon className="w-4.5 h-4.5 text-white" />
               </div>
             )}
             <div className="flex flex-col leading-none">
-              <span className="font-inter font-black text-base text-ink tracking-tight group-hover:text-accent transition-colors">
-                BODEGA DNAVITS
+              <span className="font-inter font-black text-base text-ink tracking-tight group-hover:text-accent transition-colors uppercase">
+                {nombreBodega || "BODEGA DNAVITS"}
               </span>
               <span className="text-[9px] uppercase tracking-eyebrow text-ink-faint font-semibold">
                 Licores &amp; Bebidas Heladas
