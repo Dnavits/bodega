@@ -10,8 +10,9 @@ interface BodegaFooterProps {
 
 export function BodegaFooter({ nombreBodega, whatsapp, telefono, direccion }: BodegaFooterProps) {
   const wa = whatsapp || WHATSAPP_NUMBER;
-  const waUrl = `https://wa.me/${wa}`;
-  const nombre = nombreBodega || "Bodega Dnavits";
+  const nombre = (nombreBodega || "Bodega Dnavits").trim();
+  const waMsg = encodeURIComponent(`Hola ${nombre} 🍻, deseo hacer una consulta sobre sus bebidas.`);
+  const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
 
   return (
     <footer id="contacto" className="bg-surface border-t border-hairline text-ink-muted pt-16 pb-12">

@@ -92,14 +92,21 @@ export async function POST(request: Request) {
 
   // Enviar email si hay correo configurado
   if (email) {
+    const { data: configRow } = await supabase
+      .from("configuracion")
+      .select("nombre_bodega")
+      .limit(1)
+      .maybeSingle();
+    const nombreBodegaEmail = configRow?.nombre_bodega?.trim() || "Bodega Dnavits";
+
     await sendEmail(
       email,
-      `Confirmación de tu pedido #${pedido.numero_orden || pedido.id.slice(0, 6)} - Bodega Dnavits`,
+      `Confirmación de tu pedido #${pedido.numero_orden || pedido.id.slice(0, 6)} - ${nombreBodegaEmail}`,
       `<p>Hola ${nombre},</p>
        <p>Tu pedido #${pedido.numero_orden || pedido.id.slice(0, 6)} por $${total.toLocaleString("es-CO")} fue recibido correctamente.</p>
        <p>Dirección de entrega: ${texto}, ${barrio}, ${ciudad || "Medellín"}.</p>
        <p>Tiempo de entrega: menos de 45 minutos.</p>
-       <p>¡Gracias por elegir Bodega Dnavits!</p>`
+       <p>¡Gracias por elegir ${nombreBodegaEmail}!</p>`
     );
   }
 

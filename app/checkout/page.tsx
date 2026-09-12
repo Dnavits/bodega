@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { BeerIcon, WhatsAppIcon, CheckIcon } from "@/components/Icons";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -22,6 +23,36 @@ export default function CheckoutPage() {
     numeroOrden?: number;
     total: number;
   } | null>(null);
+  const [configBodega, setConfigBodega] = useState<{
+    nombre: string;
+    whatsapp: string;
+  }>({
+    nombre: "Bodega Dnavits",
+    whatsapp: WHATSAPP_NUMBER,
+  });
+
+  useEffect(() => {
+    async function cargarConfig() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("configuracion")
+          .select("nombre_bodega, whatsapp_pedidos")
+          .limit(1)
+          .maybeSingle();
+
+        if (data) {
+          setConfigBodega({
+            nombre: data.nombre_bodega?.trim() || "Bodega Dnavits",
+            whatsapp: data.whatsapp_pedidos?.trim() || WHATSAPP_NUMBER,
+          });
+        }
+      } catch (err) {
+        console.error("Error al cargar configuración de bodega en checkout:", err);
+      }
+    }
+    cargarConfig();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,9 +110,14 @@ export default function CheckoutPage() {
       ? `#${pedidoConfirmado.numeroOrden}`
       : `#${pedidoConfirmado.id.slice(0, 6)}`;
 
-    const mensaje = `Hola Bodega Dnavits 🍻, acabo de registrar mi pedido ${ordenStr}:%0A%0A*DATOS:*%0A👤 ${nombre}%0A📞 ${telefono}%0A📍 ${direccion} (${barrio})%0A💵 Pago: ${metodoPago.toUpperCase()}%0A%0A*Total: $${pedidoConfirmado.total.toLocaleString("es-CO")}*%0A%0A¿Me confirman tiempo de llegada?`;
+    const bodegaNombre = configBodega.nombre || "Bodega Dnavits";
+    const waDestino = configBodega.whatsapp || WHATSAPP_NUMBER;
 
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${mensaje}`, "_blank");
+    const mensaje = encodeURIComponent(
+      `Hola ${bodegaNombre} 🍻, acabo de registrar mi pedido ${ordenStr}:\n\n*DATOS:*\n👤 ${nombre}\n📞 ${telefono}\n📍 ${direccion} (${barrio})\n💵 Pago: ${metodoPago.toUpperCase()}\n\n*Total: $${pedidoConfirmado.total.toLocaleString("es-CO")}*\n\n¿Me confirman tiempo de llegada?`
+    );
+
+    window.open(`https://wa.me/${waDestino}?text=${mensaje}`, "_blank");
   }
 
   // ── Pantalla de Pedido Confirmado ──
@@ -99,7 +135,7 @@ export default function CheckoutPage() {
             ¡Pedido {pedidoConfirmado.numeroOrden ? `#${pedidoConfirmado.numeroOrden}` : "Confirmado"}!
           </h1>
           <p className="text-xs text-ink-muted leading-relaxed mb-6">
-            Guardamos tu pedido en el sistema de la bodega. Ya está listo para ser despachado a <strong>{direccion}, {barrio}</strong>.
+            Guardamos tu pedido en el sistema de <strong>{configBodega.nombre}</strong>. Ya está listo para ser despachado a <strong>{direccion}, {barrio}</strong>.
           </p>
 
           <div className="p-4 bg-surface rounded-card border border-hairline text-left mb-6 space-y-1.5 text-xs">

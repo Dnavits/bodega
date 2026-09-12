@@ -5,6 +5,7 @@ import { BeerIcon, WhatsAppIcon } from "@/components/Icons";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 interface HeroProps {
+  nombreBodega?:      string | null;
   badge?:             string | null;
   titulo?:            string | null;
   subtituloRainbow?:  string | null;
@@ -20,6 +21,7 @@ const DEFAULT_FEATURES = [
 ];
 
 export function Hero({
+  nombreBodega,
   badge,
   titulo,
   subtituloRainbow,
@@ -28,7 +30,9 @@ export function Hero({
   whatsappPedidos,
 }: HeroProps) {
   const wa = whatsappPedidos || WHATSAPP_NUMBER;
-  const waUrl = `https://wa.me/${wa}`;
+  const nombre = (nombreBodega || "Bodega Dnavits").trim();
+  const waMsg = encodeURIComponent(`Hola ${nombre} 🍻, deseo hacer un pedido de bebidas.`);
+  const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
 
   const badgeText = badge || "DOMICILIOS EXPRESS · MEDELLÍN";
   const mainTitle = titulo || "Tus bebidas heladas,";
@@ -104,9 +108,7 @@ export function Hero({
 
           {/* Secondary — filled emerald */}
           <a
-            href={`${waUrl}?text=Hola%20${encodeURIComponent(
-              "Bodega"
-            )}%2C%20quiero%20hacer%20un%20pedido.`}
+            href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-emerald hover:bg-emerald-hover text-white font-bold px-8 py-3.5 rounded-btn shadow-portrait transition-all active:scale-95 text-sm"

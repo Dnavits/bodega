@@ -5,20 +5,24 @@ import { CloseIcon, TrashIcon, WhatsAppIcon } from "@/components/Icons";
 import Link from "next/link";
 
 interface CartDrawerProps {
-  whatsapp?: string | null;
+  whatsapp?:     string | null;
+  nombreBodega?: string | null;
 }
 
 const FALLBACK_WA = "573019519391";
 
-export function CartDrawer({ whatsapp }: CartDrawerProps) {
+export function CartDrawer({ whatsapp, nombreBodega }: CartDrawerProps) {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, total } = useCart();
 
   if (!isOpen) return null;
 
   const wa = whatsapp || FALLBACK_WA;
-  const waMsg = `Hola Bodega Dnavits 🍻, quiero pedir:%0A%0A${items
-    .map(i => `• ${i.cantidad}x ${i.nombre} — $${(i.precio * i.cantidad).toLocaleString("es-CO")}`)
-    .join("%0A")}%0A%0A*Total: $${total.toLocaleString("es-CO")}*`;
+  const nombre = (nombreBodega || "Bodega Dnavits").trim();
+  const waMsg = encodeURIComponent(
+    `Hola ${nombre} 🍻, quiero pedir:\n\n${items
+      .map(i => `• ${i.cantidad}x ${i.nombre} — $${(i.precio * i.cantidad).toLocaleString("es-CO")}`)
+      .join("\n")}\n\n*Total: $${total.toLocaleString("es-CO")}*`
+  );
   const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
 
   return (

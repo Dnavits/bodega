@@ -28,10 +28,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No se pudo generar el código." }, { status: 500 });
   }
 
+  const { data: configRow } = await supabase
+    .from("configuracion")
+    .select("nombre_bodega")
+    .limit(1)
+    .maybeSingle();
+  const nombreBodega = configRow?.nombre_bodega?.trim() || "Bodega Dnavits";
+
   const { enviado } = await sendEmail(
     email,
-    "Tu código de verificación - Bodega Dnavits",
-    `<p>Tu código de verificación es:</p><h2 style="letter-spacing:4px">${codigo}</h2><p>Vence en 10 minutos.</p>`
+    `Tu código de verificación - ${nombreBodega}`,
+    `<p>Tu código de verificación para ${nombreBodega} es:</p><h2 style="letter-spacing:4px">${codigo}</h2><p>Vence en 10 minutos.</p>`
   );
 
   // En desarrollo, si todavia no configuras Resend, devolvemos el

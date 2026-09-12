@@ -4,21 +4,25 @@ import { WhatsAppIcon } from "./Icons";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 interface FloatingWhatsAppProps {
-  whatsapp?: string | null;
-  visible?:  boolean;
+  whatsapp?:     string | null;
+  nombreBodega?: string | null;
+  visible?:      boolean;
 }
 
-export function FloatingWhatsApp({ whatsapp, visible = true }: FloatingWhatsAppProps) {
+export function FloatingWhatsApp({ whatsapp, nombreBodega, visible = true }: FloatingWhatsAppProps) {
   if (visible === false) return null;
 
   const wa = whatsapp || WHATSAPP_NUMBER;
+  const nombre = (nombreBodega || "Bodega Dnavits").trim();
+  const mensajeWa = encodeURIComponent(`Hola ${nombre} 🍻, deseo hacer un pedido de bebidas.`);
+
   return (
     <aside aria-label="Contacto directo" className="fixed bottom-5 right-5 z-40">
       <a
-        href={`https://wa.me/${wa}?text=Hola%20Bodega%20Dnavits%2C%20deseo%20hacer%20un%20pedido%20de%20bebidas.`}
+        href={`https://wa.me/${wa}?text=${mensajeWa}`}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Pedir por WhatsApp a Bodega Dnavits"
+        aria-label={`Pedir por WhatsApp a ${nombre}`}
         className="flex items-center gap-2.5 bg-emerald hover:bg-emerald-hover text-white px-4 py-3 sm:px-5 sm:py-3.5 rounded-pill shadow-portrait transition-all duration-300 hover:scale-105 active:scale-95 group border border-white/20"
       >
         <WhatsAppIcon className="w-5 h-5 text-white" />

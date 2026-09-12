@@ -158,12 +158,14 @@ export const PRODUCTS = [
   }
 ];
 
+import { WHATSAPP_NUMBER, BODEGA_NAME } from "@/lib/constants";
+
 export function generateWhatsAppLink(productName, priceFormatted) {
-  const message = `Hola Momentos Abigail ✨, me interesa ordenar el *${productName}* (${priceFormatted}). Me gustaría consultar disponibilidad y colores para mi entrega en Medellín/Valle de Aburrá.`;
+  const message = `Hola ${BODEGA_NAME} 🍻, me interesa ordenar el *${productName}* (${priceFormatted}). Me gustaría consultar disponibilidad para mi entrega en Medellín/Valle de Aburrá.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
 export function generateGeneralWhatsAppLink() {
-  const message = "Hola Momentos Abigail ✨, me gustaría recibir asesoría personalizada sobre sus ramos de flores eternas en satín y opciones de personalización.";
+  const message = `Hola ${BODEGA_NAME} 🍻, me gustaría recibir información sobre sus bebidas frías y licores a domicilio.`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }

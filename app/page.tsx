@@ -43,6 +43,7 @@ export default async function HomePage() {
       />
       <main className="pt-28">
         <Hero
+          nombreBodega={config.nombre_bodega}
           badge={config.hero_badge}
           titulo={config.hero_titulo}
           subtituloRainbow={config.hero_subtitulo_rainbow}
@@ -58,9 +59,13 @@ export default async function HomePage() {
         telefono={config.telefono_contacto}
         direccion={config.direccion_bodega}
       />
-      <CartDrawer whatsapp={config.whatsapp_pedidos} />
+      <CartDrawer
+        whatsapp={config.whatsapp_pedidos}
+        nombreBodega={config.nombre_bodega}
+      />
       <FloatingWhatsApp
         whatsapp={config.whatsapp_pedidos}
+        nombreBodega={config.nombre_bodega}
         visible={config.mostrar_whatsapp_flotante}
       />
     </>
