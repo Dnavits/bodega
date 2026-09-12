@@ -5,6 +5,25 @@ interface IconProps {
   style?: React.CSSProperties;
 }
 
+export function ExcelIcon({ className = "w-5 h-5", style }: IconProps) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 32 32" fill="none">
+      {/* Fondo de tabla verde hoja de cálculo */}
+      <rect x="13" y="4" width="16" height="24" rx="2.5" fill="#107C41" />
+      {/* Cuadrícula interna de celdas */}
+      <path d="M13 10h16M13 16h16M13 22h16M21 4v24" stroke="#21A366" strokeWidth="1.2" opacity="0.6" />
+      {/* Bloque frontal elevado de Excel con sombra */}
+      <rect x="3" y="6" width="14" height="20" rx="2.5" fill="#185C37" />
+      <rect x="3.5" y="6.5" width="13" height="19" rx="2" fill="#21A366" />
+      {/* Letra X de Excel estilizada */}
+      <path
+        d="M7.2 11.5L9.6 16l-2.6 4.5h2l1.6-3 1.6 3h2L11.6 16l2.4-4.5h-2l-1.6 3-1.6-3H7.2z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  );
+}
+
 export function EyeIcon({ className = "w-5 h-5", style }: IconProps) {
   return (
     <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

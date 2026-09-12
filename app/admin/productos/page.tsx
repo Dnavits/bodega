@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PlusIcon, TrashIcon, BeerIcon } from "@/components/Icons";
+import { PlusIcon, TrashIcon, BeerIcon, ExcelIcon } from "@/components/Icons";
 import { CATEGORIAS_PRODUCTOS, CATEGORIA_LABELS } from "@/lib/constants";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
 import * as XLSX from "xlsx";
@@ -397,25 +397,26 @@ export default function AdminProductos() {
           <button
             type="button"
             onClick={descargarPlantillaExcel}
-            className="inline-flex items-center gap-2 bg-canvas hover:bg-surface text-ink border border-hairline px-4 py-2.5 rounded-btn text-xs font-semibold shadow-subtle transition-all active:scale-95"
+            className="inline-flex items-center gap-2.5 bg-canvas hover:bg-surface text-ink border border-hairline px-4 py-2.5 rounded-btn text-xs font-semibold shadow-subtle transition-all active:scale-95"
             title="Descargar archivo Excel con formato listo para rellenar"
           >
-            <span className="text-sm">📊</span>
+            <ExcelIcon className="w-5 h-5 shrink-0" />
             <span>Descargar Plantilla Excel</span>
           </button>
 
           <button
             type="button"
             onClick={() => excelInputRef.current?.click()}
-            className="inline-flex flex-col items-start bg-ink hover:bg-ink-light text-white px-4 py-2 rounded-btn shadow-portrait transition-all active:scale-95 text-left"
+            className="inline-flex items-center gap-2.5 bg-ink hover:bg-ink-light text-white px-4 py-2 rounded-btn shadow-portrait transition-all active:scale-95 text-left"
             title="Importar productos masivamente desde tu Excel completado"
           >
-            <span className="text-xs font-bold flex items-center gap-1.5">
-              <span>📥</span> Cargar Productos
-            </span>
-            <span className="text-[9px] text-white/70 font-normal">
-              Desde la plantilla excel
-            </span>
+            <ExcelIcon className="w-5 h-5 shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-xs font-bold leading-tight">Cargar Productos</span>
+              <span className="text-[10px] text-white/70 font-normal leading-tight">
+                Desde la plantilla excel
+              </span>
+            </div>
           </button>
           <input
             ref={excelInputRef}
