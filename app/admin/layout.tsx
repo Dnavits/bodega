@@ -2,14 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminAccess } from "@/lib/admin-auth";
-import {
-  BeerIcon,
-  PackageIcon,
-  TrendingUpIcon,
-  SettingsIcon,
-  ShieldAdminIcon,
-  PaletteIcon,
-} from "@/components/Icons";
+import { BeerIcon, ShieldAdminIcon } from "@/components/Icons";
+import { AdminNav } from "@/components/AdminNav";
 
 export const dynamic = "force-dynamic";
 
@@ -83,40 +77,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
         </div>
 
-        {/* Menú de Navegación del Panel */}
-        <nav className="p-4 space-y-1.5 flex-1">
-          <Link
-            href="/admin"
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
-          >
-            <TrendingUpIcon className="w-4 h-4 text-accent" />
-            <span>Dashboard & Métricas</span>
-          </Link>
-
-          <Link
-            href="/admin/productos"
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
-          >
-            <PackageIcon className="w-4 h-4 text-emerald" />
-            <span>Inventario &amp; Productos</span>
-          </Link>
-
-          <Link
-            href="/admin/personalizacion"
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
-          >
-            <PaletteIcon className="w-4 h-4 text-accent" />
-            <span>Personalización &amp; Portada</span>
-          </Link>
-
-          <Link
-            href="/admin/configuracion"
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
-          >
-            <SettingsIcon className="w-4 h-4 text-ink-muted" />
-            <span>Ajustes &amp; Lista Blanca</span>
-          </Link>
-        </nav>
+        {/* Menú de Navegación del Panel con estado activo */}
+        <AdminNav />
 
         {/* Footer del Sidebar con datos del Admin logueado */}
         <div className="p-4 border-t border-divider bg-surface/50">
