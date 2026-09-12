@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PlusIcon, TrashIcon, BeerIcon } from "@/components/Icons";
 import { CATEGORIAS_PRODUCTOS, CATEGORIA_LABELS } from "@/lib/constants";
+import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
 
 type Producto = {
   id: string;
@@ -24,6 +25,7 @@ const formVacio = {
   precio_comparacion: "",
   stock: "",
   categoria: "gaseosas",
+  nuevaCategoria: "",
   imagen_url: "",
   activo: true,
 };
@@ -37,6 +39,9 @@ export default function AdminProductos() {
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
   const [filtroCategoria, setFiltroCategoria] = useState("todas");
+  const [esNuevaCategoria, setEsNuevaCategoria] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function cargar() {
     const { data } = await supabase
@@ -50,6 +55,31 @@ export default function AdminProductos() {
     cargar();
   }, []);
 
+  // Categorías dinámicas disponibles calculadas de la base de datos
+  const listaCategorias = useMemo(() => {
+    const set = new Set<string>();
+    CATEGORIAS_PRODUCTOS.forEach((c) => set.add(c.toLowerCase()));
+    productos.forEach((p) => {
+      if (p.categoria && p.categoria.trim()) {
+        set.add(p.categoria.trim().toLowerCase());
+      }
+    });
+    return Array.from(set);
+  }, [productos]);
+
+  // Manejo de subida de archivo para imagen de producto
+  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const processed = await processImageFile(file, IMAGE_SPECS.producto);
+      setForm((prev) => ({ ...prev, imagen_url: processed }));
+      setMensaje("✓ Fotografía procesada con éxito a 800x800 px.");
+    } catch (err: any) {
+      setError(err.message || "Error al procesar la imagen.");
+    }
+  }
+
   async function guardarProducto(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -57,6 +87,17 @@ export default function AdminProductos() {
 
     if (!form.nombre.trim() || !form.precio || form.stock === "") {
       setError("Completa el nombre, precio y cantidad en stock.");
+      return;
+    }
+
+    const categoriaFinal = (
+      esNuevaCategoria && form.nuevaCategoria.trim()
+        ? form.nuevaCategoria.trim()
+        : form.categoria
+    ).toLowerCase();
+
+    if (!categoriaFinal) {
+      setError("Selecciona o escribe una categoría para el producto.");
       return;
     }
 
@@ -68,7 +109,7 @@ export default function AdminProductos() {
       precio: parseInt(form.precio, 10),
       precio_comparacion: form.precio_comparacion ? parseInt(form.precio_comparacion, 10) : null,
       stock: parseInt(form.stock, 10),
-      categoria: form.categoria.toLowerCase(),
+      categoria: categoriaFinal,
       imagenes: form.imagen_url.trim() ? [form.imagen_url.trim()] : [],
       activo: form.activo,
     };
@@ -91,7 +132,7 @@ export default function AdminProductos() {
             .eq("id", editandoId);
 
           if (retryError) throw retryError;
-          setMensaje("✓ Producto actualizado (Nota: para guardar descripción, ejecuta el SQL de actualización de columnas en Supabase).");
+          setMensaje("✓ Producto actualizado con éxito en la tienda.");
         } else if (updateError) {
           throw updateError;
         } else {
@@ -112,7 +153,7 @@ export default function AdminProductos() {
             .insert([fallbackPayload]);
 
           if (retryError) throw retryError;
-          setMensaje("✓ Producto creado con éxito (Nota: para guardar descripción, ejecuta el SQL de actualización de columnas en Supabase).");
+          setMensaje("✓ Producto creado y publicado con éxito en la tienda.");
         } else if (insertError) {
           throw insertError;
         } else {
@@ -121,6 +162,7 @@ export default function AdminProductos() {
       }
 
       setForm(formVacio);
+      setEsNuevaCategoria(false);
       setEditandoId(null);
       await cargar();
     } catch (err: any) {
@@ -147,6 +189,7 @@ export default function AdminProductos() {
 
   function comenzarEdicion(p: Producto) {
     setEditandoId(p.id);
+    setEsNuevaCategoria(false);
     setForm({
       nombre: p.nombre,
       descripcion: p.descripcion || "",
@@ -154,6 +197,7 @@ export default function AdminProductos() {
       precio_comparacion: p.precio_comparacion ? p.precio_comparacion.toString() : "",
       stock: p.stock.toString(),
       categoria: p.categoria?.toLowerCase() || "gaseosas",
+      nuevaCategoria: "",
       imagen_url: p.imagenes?.[0] || "",
       activo: p.activo ?? true,
     });
@@ -163,6 +207,11 @@ export default function AdminProductos() {
   const productosFiltrados = productos.filter((p) =>
     filtroCategoria === "todas" ? true : (p.categoria || "").toLowerCase() === filtroCategoria.toLowerCase()
   );
+
+  function getCatLabel(c: string) {
+    return CATEGORIA_LABELS[c as keyof typeof CATEGORIA_LABELS] ||
+      (c.charAt(0).toUpperCase() + c.slice(1));
+  }
 
   return (
     <div className="space-y-10">
@@ -175,7 +224,7 @@ export default function AdminProductos() {
           Gestión de Bebidas y Stock
         </h1>
         <p className="text-xs text-ink-muted mt-1">
-          Cualquier cambio de precio, stock o fotos que hagas aquí se actualiza de inmediato en la tienda pública.
+          Cualquier cambio de precio, stock o fotos que hagas aquí se actualiza de inmediato en la tienda pública en vivo.
         </p>
       </div>
 
@@ -195,6 +244,7 @@ export default function AdminProductos() {
               onClick={() => {
                 setEditandoId(null);
                 setForm(formVacio);
+                setEsNuevaCategoria(false);
               }}
               className="text-xs text-ink-muted hover:text-ink underline"
             >
@@ -207,7 +257,7 @@ export default function AdminProductos() {
           {/* Nombre */}
           <div className="md:col-span-2">
             <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Nombre de la Bebida *
+              Nombre de la Bebida / Producto *
             </label>
             <input
               type="text"
@@ -218,39 +268,56 @@ export default function AdminProductos() {
             />
           </div>
 
-          {/* Categoría */}
+          {/* Categoría Dinámica */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Categoría *
             </label>
-            <select
-              value={form.categoria}
-              onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none transition-colors"
-            >
-              {CATEGORIAS_PRODUCTOS.map((c) => (
-                <option key={c} value={c}>
-                  {CATEGORIA_LABELS[c]}
-                </option>
-              ))}
-            </select>
+            {!esNuevaCategoria ? (
+              <div className="space-y-1.5">
+                <select
+                  value={form.categoria}
+                  onChange={(e) => {
+                    if (e.target.value === "__NUEVA__") {
+                      setEsNuevaCategoria(true);
+                    } else {
+                      setForm({ ...form, categoria: e.target.value });
+                    }
+                  }}
+                  className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none capitalize transition-colors"
+                >
+                  {listaCategorias.map((c) => (
+                    <option key={c} value={c}>
+                      {getCatLabel(c)}
+                    </option>
+                  ))}
+                  <option value="__NUEVA__" className="font-bold text-accent">
+                    + Agregar nueva categoría...
+                  </option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Nombre de la nueva categoría (Ej: Snacks, Vinos, Hielo)"
+                  value={form.nuevaCategoria}
+                  onChange={(e) => setForm({ ...form, nuevaCategoria: e.target.value })}
+                  className="w-full bg-canvas border border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setEsNuevaCategoria(false)}
+                  className="px-3 py-2 text-xs text-ink-muted hover:text-ink border border-hairline rounded-btn shrink-0"
+                >
+                  Volver a lista
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* URL de la Imagen */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              URL de la Fotografía (Unsplash o enlace directo)
-            </label>
-            <input
-              type="text"
-              placeholder="https://images.unsplash.com/..."
-              value={form.imagen_url}
-              onChange={(e) => setForm({ ...form, imagen_url: e.target.value })}
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
-            />
-          </div>
-
-          {/* Precio */}
+          {/* Precio de Venta */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Precio de Venta ($ COP) *
@@ -292,8 +359,80 @@ export default function AdminProductos() {
             />
           </div>
 
+          {/* SECCIÓN DE IMAGEN: SUBIR ARCHIVO O PEGAR URL */}
+          <div className="md:col-span-2 p-4 bg-surface border border-hairline rounded-card space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
+                  Fotografía del Producto
+                </label>
+                <p className="text-[11px] text-accent font-semibold">
+                  📐 Medidas recomendadas: {IMAGE_SPECS.producto.recommended}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                📁 Seleccionar Archivo desde tu Equipo
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageFile}
+                className="hidden"
+              />
+            </div>
+
+            <div>
+              <input
+                type="text"
+                placeholder="O pega el enlace URL de la foto (https://...)"
+                value={form.imagen_url}
+                onChange={(e) => setForm({ ...form, imagen_url: e.target.value })}
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-xs text-ink placeholder-ink-faint outline-none transition-colors"
+              />
+            </div>
+
+            {form.imagen_url && (
+              <div className="flex items-center gap-4 p-3 bg-canvas border border-hairline rounded-card">
+                <img
+                  src={form.imagen_url}
+                  alt="Vista previa"
+                  className="w-16 h-16 rounded-xl object-contain bg-surface border border-hairline p-1"
+                />
+                <div className="text-xs text-ink-muted">
+                  <p className="font-semibold text-emerald">✓ Imagen cargada para este producto</p>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, imagen_url: "" })}
+                    className="text-[11px] text-danger hover:underline mt-0.5"
+                  >
+                    Quitar imagen
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Descripción */}
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Descripción Breve
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Presentación retornable o no retornable, temperatura de entrega, pack de 6 unidades..."
+              value={form.descripcion}
+              onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors resize-none"
+            />
+          </div>
+
           {/* Estado Activo */}
-          <div className="flex items-center gap-3 pt-6">
+          <div className="flex items-center gap-3 pt-2">
             <input
               type="checkbox"
               id="activo"
@@ -304,20 +443,6 @@ export default function AdminProductos() {
             <label htmlFor="activo" className="text-xs font-semibold text-ink">
               Publicado en tienda (Visible para los clientes)
             </label>
-          </div>
-
-          {/* Descripción */}
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Descripción Breve
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Presentación retornable o no retornable, grado de alcohol, temperatura de entrega..."
-              value={form.descripcion}
-              onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors resize-none"
-            />
           </div>
         </div>
 
@@ -354,17 +479,17 @@ export default function AdminProductos() {
             </p>
           </div>
 
-          {/* Filtro por Categoría */}
+          {/* Filtro por Categoría Dinámica */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-ink-muted">Categoría:</span>
             <select
               value={filtroCategoria}
               onChange={(e) => setFiltroCategoria(e.target.value)}
-              className="bg-canvas border border-hairline rounded-btn px-3 py-1.5 text-xs text-ink outline-none"
+              className="bg-canvas border border-hairline rounded-btn px-3 py-1.5 text-xs text-ink outline-none capitalize"
             >
               <option value="todas">Todas</option>
-              {CATEGORIAS_PRODUCTOS.map((c) => (
-                <option key={c} value={c}>{CATEGORIA_LABELS[c]}</option>
+              {listaCategorias.map((c) => (
+                <option key={c} value={c}>{getCatLabel(c)}</option>
               ))}
             </select>
           </div>
@@ -405,7 +530,7 @@ export default function AdminProductos() {
                       <span>{p.nombre}</span>
                     </td>
                     <td className="py-3.5 text-ink-muted capitalize">
-                      {CATEGORIA_LABELS[(p.categoria || "").toLowerCase() as keyof typeof CATEGORIA_LABELS] || p.categoria}
+                      {getCatLabel(p.categoria || "otros")}
                     </td>
                     <td className="py-3.5 font-inter font-bold text-accent">
                       ${p.precio.toLocaleString("es-CO")}

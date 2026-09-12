@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProductCard, ProductoBodega } from "./ProductCard";
 import { BeerIcon } from "@/components/Icons";
-import { CATEGORIAS_PRODUCTOS, CATEGORIA_LABELS } from "@/lib/constants";
+import { CATEGORIA_LABELS } from "@/lib/constants";
 
 const SAMPLE_PRODUCTS: ProductoBodega[] = [
   {
@@ -49,53 +49,98 @@ const SAMPLE_PRODUCTS: ProductoBodega[] = [
 ];
 
 export function Tienda() {
-  // Create client ONCE outside state to prevent subscription leaks
-  const supabaseRef = useRef(createClient());
-  const supabase = supabaseRef.current;
-
   const [productos,       setProductos]       = useState<ProductoBodega[]>([]);
   const [cargando,        setCargando]        = useState(true);
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todos");
   const [busqueda,        setBusqueda]        = useState("");
 
   useEffect(() => {
+    let activo = true;
+    const supabase = createClient();
+
     async function cargar() {
       try {
+        // Usar select("*") para que nunca falle por columnas ausentes
         const { data, error } = await supabase
           .from("productos")
-          .select("id,nombre,descripcion,precio,precio_comparacion,imagenes,categoria,stock,activo")
-          .eq("activo", true)
-          .order("categoria");
+          .select("*")
+          .order("created_at", { ascending: false });
 
-        setProductos(!error && data && data.length > 0 ? data : SAMPLE_PRODUCTS);
-      } catch {
-        setProductos(SAMPLE_PRODUCTS);
+        if (!activo) return;
+
+        if (!error && data && data.length > 0) {
+          // Filtrar activos (o aquellos sin campo activo explícito en false)
+          const visibles = data.filter((p: any) => p.activo !== false);
+          setProductos(visibles.length > 0 ? visibles : data);
+        } else {
+          // Si no hay productos o hay error, usar muestras para que la tienda nunca quede vacía
+          setProductos(SAMPLE_PRODUCTS);
+        }
+      } catch (err) {
+        console.error("Error al cargar productos de tienda:", err);
+        if (activo) setProductos(SAMPLE_PRODUCTS);
       } finally {
-        setCargando(false);
+        if (activo) setCargando(false);
       }
     }
 
     cargar();
 
-    // Realtime subscription for live updates from admin
+    // Timeout de seguridad de 2.5s para asegurar que nunca se quede en esqueleto
+    const timer = setTimeout(() => {
+      if (activo) setCargando(false);
+    }, 2500);
+
+    // Suscripción Realtime para actualizar en vivo cuando el admin guarde cualquier producto
     const channel = supabase
-      .channel("tienda_productos")
-      .on("postgres_changes", { event: "*", schema: "public", table: "productos" }, () => cargar())
+      .channel("realtime_tienda_productos")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "productos" },
+        () => {
+          cargar();
+        }
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [supabase]);
+    return () => {
+      activo = false;
+      clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Categorías dinámicas: calculadas en vivo a partir de los productos en inventario
+  const categoriasDisponibles = useMemo(() => {
+    const set = new Set<string>();
+    // Categorías base recomendadas
+    ["gaseosas", "cervezas", "aguas", "licores"].forEach((c) => set.add(c));
+    // Nuevas categorías agregadas en tiempo real por el admin
+    productos.forEach((p) => {
+      if (p.categoria && p.categoria.trim()) {
+        set.add(p.categoria.trim().toLowerCase());
+      }
+    });
+    return Array.from(set);
+  }, [productos]);
 
   const productosFiltrados = useMemo(() => {
-    return productos.filter(p => {
-      const catMatch = categoriaActiva === "todos" ||
-        p.categoria.toLowerCase() === categoriaActiva.toLowerCase();
-      const searchMatch = !busqueda ||
-        p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        p.categoria.toLowerCase().includes(busqueda.toLowerCase());
+    return productos.filter((p) => {
+      const catMatch =
+        categoriaActiva === "todos" ||
+        (p.categoria || "").toLowerCase() === categoriaActiva.toLowerCase();
+      const searchMatch =
+        !busqueda ||
+        (p.nombre || "").toLowerCase().includes(busqueda.toLowerCase()) ||
+        (p.categoria || "").toLowerCase().includes(busqueda.toLowerCase());
       return catMatch && searchMatch;
     });
   }, [productos, categoriaActiva, busqueda]);
+
+  function getLabel(cat: string) {
+    return CATEGORIA_LABELS[cat as keyof typeof CATEGORIA_LABELS] ||
+      (cat.charAt(0).toUpperCase() + cat.slice(1));
+  }
 
   return (
     <section id="catalogo" className="py-16 sm:py-24 bg-canvas">
@@ -111,7 +156,7 @@ export function Tienda() {
               Catálogo de Bebidas
             </h2>
             <p className="mt-1.5 text-sm text-ink-muted max-w-md">
-              Agrega al carrito o pide por WhatsApp.
+              Agrega al carrito o pide directamente por WhatsApp.
             </p>
           </div>
 
@@ -119,13 +164,13 @@ export function Tienda() {
           <input
             type="text"
             value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
+            onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar gaseosa, cerveza, agua..."
-            className="w-full md:w-64 border border-hairline focus:border-accent rounded-input bg-canvas px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none shadow-subtle"
+            className="w-full md:w-64 border border-hairline focus:border-accent rounded-input bg-canvas px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none shadow-subtle transition-colors"
           />
         </div>
 
-        {/* Category tabs */}
+        {/* Dynamic Category Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none mb-8">
           <button
             onClick={() => setCategoriaActiva("todos")}
@@ -135,28 +180,33 @@ export function Tienda() {
                 : "bg-canvas border border-hairline text-ink-muted hover:text-ink hover:bg-surface shadow-subtle"
             }`}
           >
-            Todos
+            Todos ({productos.length})
           </button>
-          {CATEGORIAS_PRODUCTOS.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setCategoriaActiva(cat)}
-              className={`px-4 py-2 rounded-btn text-xs font-semibold whitespace-nowrap transition-all active:scale-95 ${
-                categoriaActiva === cat
-                  ? "bg-ink text-white shadow-portrait"
-                  : "bg-canvas border border-hairline text-ink-muted hover:text-ink hover:bg-surface shadow-subtle"
-              }`}
-            >
-              {CATEGORIA_LABELS[cat]}
-            </button>
-          ))}
+          {categoriasDisponibles.map((cat) => {
+            const countInCat = productos.filter(
+              (p) => (p.categoria || "").toLowerCase() === cat.toLowerCase()
+            ).length;
+            return (
+              <button
+                key={cat}
+                onClick={() => setCategoriaActiva(cat)}
+                className={`px-4 py-2 rounded-btn text-xs font-semibold whitespace-nowrap transition-all active:scale-95 capitalize ${
+                  categoriaActiva === cat
+                    ? "bg-ink text-white shadow-portrait"
+                    : "bg-canvas border border-hairline text-ink-muted hover:text-ink hover:bg-surface shadow-subtle"
+                }`}
+              >
+                {getLabel(cat)} {countInCat > 0 ? `(${countInCat})` : ""}
+              </button>
+            );
+          })}
         </div>
 
         {/* Product grid */}
         {cargando ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-card h-80 animate-shimmer border border-hairline" />
+              <div key={i} className="rounded-card h-80 animate-shimmer border border-hairline bg-surface" />
             ))}
           </div>
         ) : productosFiltrados.length === 0 ? (
@@ -165,14 +215,14 @@ export function Tienda() {
             <p className="text-ink-muted font-semibold text-sm">Sin productos con ese filtro</p>
             <button
               onClick={() => { setCategoriaActiva("todos"); setBusqueda(""); }}
-              className="mt-3 text-xs text-accent hover:underline"
+              className="mt-3 text-xs text-accent hover:underline font-semibold"
             >
-              Limpiar filtros
+              Ver todos los productos
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-            {productosFiltrados.map(p => (
+            {productosFiltrados.map((p) => (
               <ProductCard key={p.id} producto={p} />
             ))}
           </div>

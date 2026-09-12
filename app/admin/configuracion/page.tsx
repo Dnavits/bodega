@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SettingsIcon, PlusIcon, TrashIcon, ShieldAdminIcon } from "@/components/Icons";
+import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
 
 type WhitelistUser = {
   id: string;
@@ -11,6 +12,31 @@ type WhitelistUser = {
   activo: boolean;
   created_at: string;
 };
+
+const SQL_MIGRATION_SCRIPT = `-- ==============================================================================
+-- BODEGA DNAVITS: EJECUTA ESTO EN SUPABASE > SQL EDITOR Y DALE "RUN"
+-- Agrega todas las columnas faltantes y recarga la memoria de Supabase
+-- ==============================================================================
+
+-- 1. Columnas en configuracion
+alter table public.configuracion add column if not exists banner_anuncio text default '🍻 Bebidas heladas a domicilio en Medellín';
+alter table public.configuracion add column if not exists nombre_bodega text default 'Bodega Dnavits';
+alter table public.configuracion add column if not exists telefono_contacto text default '3019519391';
+alter table public.configuracion add column if not exists whatsapp_pedidos text default '573019519391';
+alter table public.configuracion add column if not exists direccion_bodega text default 'Medellín, Antioquia';
+alter table public.configuracion add column if not exists costo_domicilio integer default 5000;
+alter table public.configuracion add column if not exists pedido_minimo integer default 20000;
+alter table public.configuracion add column if not exists favicon_url text;
+alter table public.configuracion add column if not exists logo_url text;
+
+-- 2. Columnas en productos
+alter table public.productos add column if not exists descripcion text;
+alter table public.productos add column if not exists precio_comparacion integer;
+alter table public.productos add column if not exists sku text;
+alter table public.productos add column if not exists destacado boolean default false;
+
+-- 3. Recargar memoria del servidor inmediatamente
+notify pgrst, 'reload schema';`;
 
 export default function AdminConfiguracion() {
   const supabase = createClient();
@@ -32,58 +58,122 @@ export default function AdminConfiguracion() {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [necesitaSql, setNecesitaSql] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+
+  // File input refs
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   async function cargarDatos() {
-    const { data: config } = await supabase
-      .from("configuracion")
-      .select("*")
-      .eq("id", true)
-      .single();
+    try {
+      const { data: config } = await supabase
+        .from("configuracion")
+        .select("*")
+        .eq("id", true)
+        .maybeSingle();
 
-    if (config) {
-      setNombreBodega(config.nombre_bodega || "Bodega Dnavits");
-      setLogoUrl(config.logo_url || "");
-      setFaviconUrl(config.favicon_url || "");
-      setBannerAnuncio(config.banner_anuncio || "");
-      setTelefonoContacto(config.telefono_contacto || "");
-      setWhatsappPedidos(config.whatsapp_pedidos || "");
-      setDireccionBodega(config.direccion_bodega || "");
-      setCostoDomicilio(config.costo_domicilio?.toString() || "5000");
-      setPedidoMinimo(config.pedido_minimo?.toString() || "20000");
+      if (config) {
+        setNombreBodega(config.nombre_bodega || "Bodega Dnavits");
+        setLogoUrl(config.logo_url || "");
+        setFaviconUrl(config.favicon_url || "");
+        setBannerAnuncio(config.banner_anuncio || "");
+        setTelefonoContacto(config.telefono_contacto || "");
+        setWhatsappPedidos(config.whatsapp_pedidos || "");
+        setDireccionBodega(config.direccion_bodega || "");
+        setCostoDomicilio(config.costo_domicilio?.toString() || "5000");
+        setPedidoMinimo(config.pedido_minimo?.toString() || "20000");
+      }
+
+      const { data: whiteData } = await supabase
+        .from("admin_whitelist")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      setWhitelist(whiteData || []);
+    } catch (err: any) {
+      console.error("Error al cargar configuración:", err);
     }
-
-    const { data: whiteData } = await supabase
-      .from("admin_whitelist")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    setWhitelist(whiteData || []);
   }
 
   useEffect(() => {
     cargarDatos();
   }, []);
 
+  // ── Manejo de subida de archivo para Logo ──
+  async function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const processed = await processImageFile(file, IMAGE_SPECS.logo);
+      setLogoUrl(processed);
+      setMensaje("✓ Logo cargado y adaptado a las medidas recomendadas. Haz clic en Guardar para aplicar.");
+    } catch (err: any) {
+      setError(err.message || "Error al procesar la imagen del logo.");
+    }
+  }
+
+  // ── Manejo de subida de archivo para Favicon ──
+  async function handleFaviconFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const processed = await processImageFile(file, IMAGE_SPECS.favicon);
+      setFaviconUrl(processed);
+      setMensaje("✓ Favicon cargado y recortado a 64x64 px. Haz clic en Guardar para aplicar.");
+    } catch (err: any) {
+      setError(err.message || "Error al procesar la imagen del favicon.");
+    }
+  }
+
   async function guardarConfiguracion(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setMensaje("");
+    setNecesitaSql(false);
     setGuardando(true);
 
-    const { error: updateError } = await supabase
+    const fullPayload = {
+      nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
+      logo_url: logoUrl.trim() || null,
+      favicon_url: faviconUrl.trim() || null,
+      banner_anuncio: bannerAnuncio.trim() || null,
+      telefono_contacto: telefonoContacto.trim() || null,
+      whatsapp_pedidos: whatsappPedidos.trim() || null,
+      direccion_bodega: direccionBodega.trim() || null,
+      costo_domicilio: parseInt(costoDomicilio, 10) || 0,
+      pedido_minimo: parseInt(pedidoMinimo, 10) || 0,
+    };
+
+    // Intentar actualización completa
+    let { error: updateError } = await supabase
       .from("configuracion")
-      .update({
-        nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
+      .update(fullPayload)
+      .eq("id", true);
+
+    // Si falla por columna faltante en Supabase (ej. banner_anuncio), intentar guardar lo básico
+    if (updateError && updateError.message.includes("schema cache")) {
+      const fallbackPayload = {
         logo_url: logoUrl.trim() || null,
         favicon_url: faviconUrl.trim() || null,
-        banner_anuncio: bannerAnuncio.trim() || null,
-        telefono_contacto: telefonoContacto.trim() || null,
-        whatsapp_pedidos: whatsappPedidos.trim() || null,
-        direccion_bodega: direccionBodega.trim() || null,
-        costo_domicilio: parseInt(costoDomicilio, 10) || 0,
-        pedido_minimo: parseInt(pedidoMinimo, 10) || 0,
-      })
-      .eq("id", true);
+      };
+
+      const { error: fallbackError } = await supabase
+        .from("configuracion")
+        .update(fallbackPayload)
+        .eq("id", true);
+
+      setGuardando(false);
+
+      if (!fallbackError) {
+        setMensaje("✓ Tu Logo y Favicon se guardaron correctamente.");
+        setNecesitaSql(true);
+      } else {
+        setError("Error al guardar: " + updateError.message);
+        setNecesitaSql(true);
+      }
+      return;
+    }
 
     setGuardando(false);
 
@@ -92,7 +182,13 @@ export default function AdminConfiguracion() {
       return;
     }
 
-    setMensaje("✓ Configuración de la bodega actualizada correctamente.");
+    setMensaje("✓ Configuración de la bodega actualizada correctamente en vivo.");
+  }
+
+  function handleCopiarSql() {
+    navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2500);
   }
 
   async function agregarAdminWhitelist(e: React.FormEvent) {
@@ -151,7 +247,284 @@ export default function AdminConfiguracion() {
         </p>
       </div>
 
-      {/* SECCIÓN 1: LISTA BLANCA DE CORREOS PARA EL DASHBOARD */}
+      {/* AVISO IMPORTANTE DE SQL SI FALTAN COLUMNAS EN SUPABASE */}
+      {necesitaSql && (
+        <div className="bg-sky/60 border-2 border-accent/40 rounded-card p-6 shadow-card animate-fade-in-up">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-inter font-bold text-sm text-ink flex items-center gap-2">
+                <span>⚡ Habilitar Columnas Avanzadas en Supabase</span>
+              </h3>
+              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+                Tu base de datos en Supabase tiene la versión inicial de la tabla <code>configuracion</code>. Para que los campos de <strong>Banner de Anuncio, Nombre, Teléfono y Domicilio</strong> se guarden en la nube, ejecuta este comando en el SQL Editor de tu proyecto Supabase:
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopiarSql}
+              className="bg-accent hover:bg-accent-hover text-white text-xs font-bold px-4 py-2 rounded-btn shadow-portrait transition-all active:scale-95 shrink-0"
+            >
+              {copiado ? "✓ ¡Copiado!" : "Copiar Código SQL"}
+            </button>
+          </div>
+          <pre className="mt-3 p-3.5 bg-canvas border border-hairline rounded-input text-[11px] text-ink font-mono overflow-x-auto max-h-40">
+            {SQL_MIGRATION_SCRIPT}
+          </pre>
+          <p className="text-[11px] text-ink-faint mt-2">
+            👉 <strong>Pasos:</strong> Ve a tu panel de <strong>Supabase</strong> &gt; <strong>SQL Editor</strong> &gt; Pega este código y presiona <strong>RUN</strong>. Luego vuelve aquí y guarda los ajustes.
+          </p>
+        </div>
+      )}
+
+      {/* SECCIÓN 1: AJUSTES DE MARCA Y BANNERS */}
+      <form
+        onSubmit={guardarConfiguracion}
+        className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-6"
+      >
+        <div className="flex items-center gap-3 border-b border-divider pb-4">
+          <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
+            <SettingsIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-inter font-bold text-base text-ink">
+              Ajustes de la Tienda Pública
+            </h2>
+            <p className="text-xs text-ink-muted">
+              Modifica los textos informativos, datos de contacto y valores de domicilio.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Nombre Bodega */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Nombre de la Bodega
+            </label>
+            <input
+              type="text"
+              value={nombreBodega}
+              onChange={(e) => setNombreBodega(e.target.value)}
+              placeholder="Postobón Supia"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+            />
+          </div>
+
+          {/* Banner Superior */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Texto del Banner de Anuncio Superior
+            </label>
+            <input
+              type="text"
+              value={bannerAnuncio}
+              onChange={(e) => setBannerAnuncio(e.target.value)}
+              placeholder="Ej: 🍻 Envíos fríos en menos de 45 min en Medellín · Bebidas heladas"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+            />
+          </div>
+
+          {/* WhatsApp de Pedidos */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Número de WhatsApp para Pedidos (con código de país)
+            </label>
+            <input
+              type="text"
+              value={whatsappPedidos}
+              onChange={(e) => setWhatsappPedidos(e.target.value)}
+              placeholder="573019519391"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+            />
+          </div>
+
+          {/* Teléfono de Contacto */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Teléfono de Llamadas / Contacto
+            </label>
+            <input
+              type="text"
+              value={telefonoContacto}
+              onChange={(e) => setTelefonoContacto(e.target.value)}
+              placeholder="3019519391"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+            />
+          </div>
+
+          {/* Dirección */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Dirección de la Bodega
+            </label>
+            <input
+              type="text"
+              value={direccionBodega}
+              onChange={(e) => setDireccionBodega(e.target.value)}
+              placeholder="Medellín, Antioquia"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+            />
+          </div>
+
+          {/* Costo Domicilio */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Costo de Domicilio ($ COP)
+            </label>
+            <input
+              type="number"
+              value={costoDomicilio}
+              onChange={(e) => setCostoDomicilio(e.target.value)}
+              placeholder="5000"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+            />
+          </div>
+
+          {/* Pedido Mínimo */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+              Pedido Mínimo ($ COP)
+            </label>
+            <input
+              type="number"
+              value={pedidoMinimo}
+              onChange={(e) => setPedidoMinimo(e.target.value)}
+              placeholder="20000"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+            />
+          </div>
+
+          {/* UPLOAD DE LOGO CON MEDIDAS Y ARCHIVO O URL */}
+          <div className="md:col-span-2 p-4 bg-surface border border-hairline rounded-card space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
+                  Logo Personalizado
+                </label>
+                <p className="text-[11px] text-accent font-semibold">
+                  📐 Medidas recomendadas: {IMAGE_SPECS.logo.recommended}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                📁 Subir Archivo de Logo
+              </button>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoFile}
+                className="hidden"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="O pega la URL del Logo (https://...)"
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2 text-xs text-ink placeholder-ink-faint outline-none"
+              />
+            </div>
+
+            {logoUrl && (
+              <div className="p-3 bg-canvas border border-hairline rounded-card flex items-center gap-4">
+                <img src={logoUrl} alt="Vista previa logo" className="h-12 w-auto max-w-[200px] object-contain rounded" />
+                <div className="text-xs text-ink-muted">
+                  <span className="font-semibold text-emerald">✓ Logo cargado</span>
+                  <button
+                    type="button"
+                    onClick={() => setLogoUrl("")}
+                    className="block text-[11px] text-danger hover:underline mt-0.5"
+                  >
+                    Quitar logo
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* UPLOAD DE FAVICON CON MEDIDAS Y ARCHIVO O URL */}
+          <div className="md:col-span-2 p-4 bg-surface border border-hairline rounded-card space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
+                  Favicon de la Página
+                </label>
+                <p className="text-[11px] text-accent font-semibold">
+                  📐 Medidas recomendadas: {IMAGE_SPECS.favicon.recommended}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => faviconInputRef.current?.click()}
+                className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                📁 Subir Archivo Favicon
+              </button>
+              <input
+                ref={faviconInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFaviconFile}
+                className="hidden"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={faviconUrl}
+                onChange={(e) => setFaviconUrl(e.target.value)}
+                placeholder="O pega la URL del Favicon (https://...)"
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2 text-xs text-ink placeholder-ink-faint outline-none"
+              />
+            </div>
+
+            {faviconUrl && (
+              <div className="p-3 bg-canvas border border-hairline rounded-card flex items-center gap-4">
+                <img src={faviconUrl} alt="Vista previa favicon" className="h-8 w-8 object-contain rounded" />
+                <div className="text-xs text-ink-muted">
+                  <span className="font-semibold text-emerald">✓ Favicon cargado</span>
+                  <button
+                    type="button"
+                    onClick={() => setFaviconUrl("")}
+                    className="block text-[11px] text-danger hover:underline mt-0.5"
+                  >
+                    Quitar favicon
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-3 bg-danger-soft border border-danger/20 rounded-card text-danger text-xs font-medium">
+            {error}
+          </div>
+        )}
+
+        {mensaje && (
+          <div className="p-3 bg-emerald-soft border border-emerald/20 rounded-card text-emerald text-xs font-medium">
+            {mensaje}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={guardando}
+          className="px-8 py-3 bg-ink hover:bg-ink-light text-white font-bold rounded-btn text-sm shadow-portrait transition-all active:scale-95 disabled:opacity-60"
+        >
+          {guardando ? "Guardando..." : "Guardar Ajustes de la Tienda"}
+        </button>
+      </form>
+
+      {/* SECCIÓN 2: LISTA BLANCA DE CORREOS PARA EL DASHBOARD */}
       <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
@@ -243,180 +616,6 @@ export default function AdminConfiguracion() {
           </table>
         </div>
       </div>
-
-      {/* SECCIÓN 2: AJUSTES DE MARCA Y BANNERS */}
-      <form
-        onSubmit={guardarConfiguracion}
-        className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-5"
-      >
-        <div className="flex items-center gap-3 border-b border-divider pb-4">
-          <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
-            <SettingsIcon className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="font-inter font-bold text-base text-ink">
-              Ajustes de la Tienda Pública
-            </h2>
-            <p className="text-xs text-ink-muted">
-              Modifica los textos informativos, datos de contacto y valores de domicilio.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Nombre Bodega */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Nombre de la Bodega
-            </label>
-            <input
-              type="text"
-              value={nombreBodega}
-              onChange={(e) => setNombreBodega(e.target.value)}
-              placeholder="Bodega Dnavits"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* Banner Superior */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Texto del Banner de Anuncio Superior
-            </label>
-            <input
-              type="text"
-              value={bannerAnuncio}
-              onChange={(e) => setBannerAnuncio(e.target.value)}
-              placeholder="Ej: 🍻 Envíos fríos en menos de 45 min en Medellín · Bebidas heladas"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* WhatsApp de Pedidos */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Número de WhatsApp para Pedidos (con código de país)
-            </label>
-            <input
-              type="text"
-              value={whatsappPedidos}
-              onChange={(e) => setWhatsappPedidos(e.target.value)}
-              placeholder="573019519391"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* Teléfono de Contacto */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Teléfono de Llamadas / Contacto
-            </label>
-            <input
-              type="text"
-              value={telefonoContacto}
-              onChange={(e) => setTelefonoContacto(e.target.value)}
-              placeholder="3019519391"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* Dirección */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Dirección de la Bodega
-            </label>
-            <input
-              type="text"
-              value={direccionBodega}
-              onChange={(e) => setDireccionBodega(e.target.value)}
-              placeholder="Medellín, Antioquia"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* Costo Domicilio */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Costo de Domicilio ($ COP)
-            </label>
-            <input
-              type="number"
-              value={costoDomicilio}
-              onChange={(e) => setCostoDomicilio(e.target.value)}
-              placeholder="5000"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* Pedido Mínimo */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Pedido Mínimo ($ COP)
-            </label>
-            <input
-              type="number"
-              value={pedidoMinimo}
-              onChange={(e) => setPedidoMinimo(e.target.value)}
-              placeholder="20000"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* URL Favicon */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              URL del Favicon (Opcional)
-            </label>
-            <input
-              type="text"
-              value={faviconUrl}
-              onChange={(e) => setFaviconUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* URL del Logo */}
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              URL del Logo Personalizado (Opcional)
-            </label>
-            <input
-              type="text"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-            {logoUrl && (
-              <div className="mt-3 p-3 bg-surface border border-hairline rounded-card inline-block">
-                <span className="text-[10px] text-ink-faint block mb-1">Vista Previa:</span>
-                <img src={logoUrl} alt="Vista previa logo" className="h-10 w-auto rounded" />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {error && (
-          <div className="p-3 bg-danger-soft border border-danger/20 rounded-card text-danger text-xs font-medium">
-            {error}
-          </div>
-        )}
-
-        {mensaje && (
-          <div className="p-3 bg-emerald-soft border border-emerald/20 rounded-card text-emerald text-xs font-medium">
-            {mensaje}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={guardando}
-          className="px-8 py-3 bg-ink hover:bg-ink-light text-white font-bold rounded-btn text-sm shadow-portrait transition-all active:scale-95 disabled:opacity-60"
-        >
-          {guardando ? "Guardando..." : "Guardar Ajustes de la Tienda"}
-        </button>
-      </form>
     </div>
   );
 }

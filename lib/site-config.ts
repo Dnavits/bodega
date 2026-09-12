@@ -28,12 +28,12 @@ const DEFAULT_CONFIG: SiteConfig = {
 export async function getSiteConfig(): Promise<SiteConfig> {
   try {
     const supabase = await createClient();
+    // Usar select("*") para que nunca falle si alguna columna opcional falta en la base de datos
     const { data, error } = await supabase
       .from("configuracion")
-      .select(
-        "nombre_bodega, logo_url, favicon_url, banner_anuncio, whatsapp_pedidos, telefono_contacto, direccion_bodega, costo_domicilio, pedido_minimo"
-      )
-      .single();
+      .select("*")
+      .eq("id", true)
+      .maybeSingle();
 
     if (error || !data) return DEFAULT_CONFIG;
 

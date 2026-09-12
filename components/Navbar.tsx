@@ -11,8 +11,8 @@ import {
 import { WHATSAPP_URL } from "@/lib/constants";
 
 interface NavbarProps {
-  logoUrl?:        string | null;
-  bannerAnuncio?:  string | null;
+  logoUrl?:         string | null;
+  bannerAnuncio?:   string | null;
   whatsappPedidos?: string | null;
 }
 
@@ -44,7 +44,7 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // ── Auth state ──
+  // ── Auth state & Admin check ──
   useEffect(() => {
     const supabase = createClient();
 
@@ -57,7 +57,6 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
       }
       setUser(u);
 
-      // Nombre preferido: full_name de Google OAuth → nombre de metadata → parte del email
       const name =
         u.user_metadata?.full_name ||
         u.user_metadata?.nombre    ||
@@ -66,21 +65,39 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
         "Usuario";
       setDisplayName(name);
 
-      // Verificar si es admin
+      // Verificación directa de admin con fallback de propietario
+      const isOwner = u.email?.toLowerCase() === "terrorgm1@gmail.com";
+      if (isOwner) {
+        setIsAdmin(true);
+      }
+
+      try {
+        // Consultar endpoint del servidor para confirmación infalible
+        const res = await fetch("/api/admin/check");
+        if (res.ok) {
+          const data = await res.json();
+          setIsAdmin(Boolean(data.isAdmin || isOwner));
+          return;
+        }
+      } catch {
+        // Fallback en cliente
+      }
+
+      // Fallback directo en Supabase
       const { data: wl } = await supabase
         .from("admin_whitelist")
         .select("activo")
         .ilike("email", u.email ?? "")
         .eq("activo", true)
-        .single();
+        .maybeSingle();
 
       const { data: prof } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", u.id)
-        .single();
+        .maybeSingle();
 
-      setIsAdmin(Boolean(wl?.activo || prof?.role === "admin"));
+      setIsAdmin(Boolean(wl?.activo || prof?.role === "admin" || isOwner));
     }
 
     supabase.auth.getUser().then(({ data: { user } }) => checkUser(user));
@@ -96,6 +113,8 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
     const supabase = createClient();
     await supabase.auth.signOut();
     setMenuOpen(false);
+    setUser(null);
+    setIsAdmin(false);
     router.refresh();
   }
 
@@ -124,9 +143,9 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             {logoUrl ? (
-              <img src={logoUrl} alt="Bodega Dnavits" className="h-8 w-auto rounded-xl" />
+              <img src={logoUrl} alt="Bodega Dnavits" className="h-8 w-auto rounded-xl object-contain" />
             ) : (
-              <div className="w-9 h-9 rounded-xl bg-ink flex items-center justify-center shrink-0 group-hover:bg-ink-light transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-ink flex items-center justify-center shrink-0 group-hover:bg-ink-light transition-colors shadow-portrait">
                 <BeerIcon className="w-4.5 h-4.5 text-white" />
               </div>
             )}
@@ -148,7 +167,7 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-emerald hover:text-emerald-hover transition-colors"
+              className="flex items-center gap-1.5 text-emerald hover:text-emerald-hover transition-colors font-semibold"
             >
               <WhatsAppIcon className="w-4 h-4" />
               <span>WhatsApp</span>
@@ -170,38 +189,43 @@ export function Navbar({ logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps)
                     {displayName[0] || "U"}
                   </div>
                   <span className="hidden sm:inline max-w-[110px] truncate">{displayName}</span>
+                  {isAdmin && (
+                    <span className="bg-sky text-accent text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-tag">
+                      Admin
+                    </span>
+                  )}
                 </button>
 
                 {/* Dropdown */}
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-canvas border border-hairline rounded-card shadow-card p-1.5 z-50 animate-fade-in-up">
+                  <div className="absolute right-0 top-full mt-2 w-60 bg-canvas border border-hairline rounded-card shadow-card p-2 z-50 animate-fade-in-up">
                     {/* User info */}
-                    <div className="px-3 py-2.5 border-b border-divider mb-1">
+                    <div className="px-3 py-2.5 border-b border-divider mb-2">
                       <p className="font-semibold text-sm text-ink truncate">{displayName}</p>
                       <p className="text-[11px] text-ink-faint truncate mt-0.5">{user.email}</p>
-                      {/* Admin badge */}
                       {isAdmin && (
                         <span className="inline-flex items-center gap-1 mt-1.5 bg-sky text-accent font-bold text-[10px] uppercase tracking-eyebrow px-2 py-0.5 rounded-tag">
-                          ⚡ Administración
+                          ⚡ Administrador Autorizado
                         </span>
                       )}
                     </div>
 
+                    {/* Botón de Dashboard para Administradores justo arriba de Cerrar Sesión */}
                     {isAdmin && (
                       <Link
                         href="/admin"
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-accent hover:bg-accent-soft transition-colors"
+                        className="flex items-center justify-center gap-2 w-full py-2.5 px-3 mb-2 rounded-btn bg-ink hover:bg-ink-light text-white text-xs font-bold shadow-portrait transition-all active:scale-95"
                       >
-                        <ShieldAdminIcon className="w-4 h-4" />
-                        <span>Panel Administrador</span>
+                        <ShieldAdminIcon className="w-4 h-4 text-accent-light" />
+                        <span>Dashboard / Panel Admin</span>
                       </Link>
                     )}
 
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-danger hover:bg-danger-soft transition-colors mt-0.5"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-danger hover:bg-danger-soft transition-colors"
                     >
                       <LogOutIcon className="w-4 h-4" />
                       <span>Cerrar Sesión</span>
