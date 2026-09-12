@@ -3,6 +3,7 @@ import { WHATSAPP_NUMBER, BODEGA_NAME } from "@/lib/constants";
 
 export type SiteConfig = {
   nombre_bodega:              string;
+  subtitulo_bodega:           string;
   logo_url:                   string | null;
   favicon_url:                string | null;
   banner_anuncio:             string | null;
@@ -23,6 +24,7 @@ export type SiteConfig = {
 
 const DEFAULT_CONFIG: SiteConfig = {
   nombre_bodega:             BODEGA_NAME,
+  subtitulo_bodega:          "Licores & Bebidas Heladas",
   logo_url:                  null,
   favicon_url:               null,
   banner_anuncio:            null,
@@ -66,6 +68,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
 
     return {
       nombre_bodega:             data.nombre_bodega             ?? DEFAULT_CONFIG.nombre_bodega,
+      subtitulo_bodega:          data.subtitulo_bodega          ?? DEFAULT_CONFIG.subtitulo_bodega,
       logo_url:                  data.logo_url                  ?? null,
       favicon_url:               data.favicon_url               ?? null,
       banner_anuncio:            data.banner_anuncio            ?? null,

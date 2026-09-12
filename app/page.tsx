@@ -36,6 +36,7 @@ export default async function HomePage() {
     <>
       <Navbar
         nombreBodega={config.nombre_bodega}
+        subtituloBodega={config.subtitulo_bodega}
         logoUrl={config.logo_url}
         bannerAnuncio={config.banner_anuncio}
         whatsappPedidos={config.whatsapp_pedidos}

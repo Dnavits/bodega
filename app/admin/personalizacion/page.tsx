@@ -28,6 +28,7 @@ export default function AdminPersonalizacion() {
 
   // Identidad
   const [nombreBodega, setNombreBodega] = useState("Bodega Dnavits");
+  const [subtituloBodega, setSubtituloBodega] = useState("Licores & Bebidas Heladas");
   const [tituloPestana, setTituloPestana] = useState("");
   const [bannerAnuncio, setBannerAnuncio] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
@@ -71,6 +72,7 @@ export default function AdminPersonalizacion() {
       if (config) {
         setConfigId(config.id);
         if (config.nombre_bodega) setNombreBodega(config.nombre_bodega);
+        if (config.subtitulo_bodega) setSubtituloBodega(config.subtitulo_bodega);
         if (config.titulo_pestana) setTituloPestana(config.titulo_pestana);
         if (config.banner_anuncio) setBannerAnuncio(config.banner_anuncio);
         if (config.logo_url) setLogoUrl(config.logo_url);
@@ -155,6 +157,7 @@ export default function AdminPersonalizacion() {
 
     const payload: any = {
       nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
+      subtitulo_bodega: subtituloBodega.trim() || "Licores & Bebidas Heladas",
       titulo_pestana: tituloPestana.trim() || null,
       banner_anuncio: bannerAnuncio.trim() || null,
       logo_url: logoUrl.trim() || null,
@@ -292,8 +295,22 @@ export default function AdminPersonalizacion() {
               />
             </div>
 
-            {/* Título de la Pestaña */}
+            {/* Subtítulo bajo el Nombre de la Bodega */}
             <div>
+              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+                Subtítulo / Lema (Bajo el nombre en la barra superior)
+              </label>
+              <input
+                type="text"
+                value={subtituloBodega}
+                onChange={(e) => setSubtituloBodega(e.target.value)}
+                placeholder="Ej: Licores & Bebidas Heladas"
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+              />
+            </div>
+
+            {/* Título de la Pestaña */}
+            <div className="md:col-span-2">
               <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
                 Título Completo de la Pestaña del Navegador (SEO)
               </label>

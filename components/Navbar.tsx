@@ -12,12 +12,13 @@ import { WHATSAPP_URL } from "@/lib/constants";
 
 interface NavbarProps {
   nombreBodega?:    string | null;
+  subtituloBodega?: string | null;
   logoUrl?:         string | null;
   bannerAnuncio?:   string | null;
   whatsappPedidos?: string | null;
 }
 
-export function Navbar({ nombreBodega, logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps) {
+export function Navbar({ nombreBodega, subtituloBodega, logoUrl, bannerAnuncio, whatsappPedidos }: NavbarProps) {
   const { count, setIsOpen } = useCart();
   const [user,            setUser]            = useState<any>(null);
   const [displayName,     setDisplayName]     = useState("");
@@ -155,7 +156,7 @@ export function Navbar({ nombreBodega, logoUrl, bannerAnuncio, whatsappPedidos }
                 {nombreBodega || "BODEGA DNAVITS"}
               </span>
               <span className="text-[9px] uppercase tracking-eyebrow text-ink-faint font-semibold">
-                Licores &amp; Bebidas Heladas
+                {subtituloBodega || "Licores & Bebidas Heladas"}
               </span>
             </div>
           </Link>

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PlusIcon, TrashIcon, BeerIcon } from "@/components/Icons";
 import { CATEGORIAS_PRODUCTOS, CATEGORIA_LABELS } from "@/lib/constants";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
+import * as XLSX from "xlsx";
 
 type Producto = {
   id: string;
@@ -42,6 +43,7 @@ export default function AdminProductos() {
   const [esNuevaCategoria, setEsNuevaCategoria] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const excelInputRef = useRef<HTMLInputElement>(null);
 
   async function cargar() {
     const { data } = await supabase
@@ -77,6 +79,167 @@ export default function AdminProductos() {
       setMensaje("✓ Fotografía procesada con éxito a 800x800 px.");
     } catch (err: any) {
       setError(err.message || "Error al procesar la imagen.");
+    }
+  }
+
+  // ── Descargar Plantilla Excel ──
+  function descargarPlantillaExcel() {
+    const datosEjemplo = [
+      {
+        "Nombre del Producto": "Postobón Manzana 1.5L",
+        "Categoría": "Gaseosas",
+        "Precio": 5200,
+        "Precio Antes": 5800,
+        "Stock": 50,
+        "Descripción": "Bebida gaseosa sabor a manzana presentación familiar",
+      },
+      {
+        "Nombre del Producto": "Cerveza Corona Extra 355ml",
+        "Categoría": "Cervezas",
+        "Precio": 28000,
+        "Precio Antes": 32000,
+        "Stock": 24,
+        "Descripción": "Six-pack botella retornable bien fría",
+      },
+      {
+        "Nombre del Producto": "Agua Cristal Garrafa 5L",
+        "Categoría": "Aguas",
+        "Precio": 6500,
+        "Precio Antes": "",
+        "Stock": 30,
+        "Descripción": "Agua purificada sin gas garrafa",
+      },
+      {
+        "Nombre del Producto": "Aguardiente Antioqueño 750ml",
+        "Categoría": "Licores",
+        "Precio": 45000,
+        "Precio Antes": 48000,
+        "Stock": 15,
+        "Descripción": "Tapa azul sin azúcar tradicional",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(datosEjemplo);
+    worksheet["!cols"] = [
+      { wch: 32 }, // Nombre
+      { wch: 16 }, // Categoría
+      { wch: 12 }, // Precio
+      { wch: 14 }, // Precio Antes
+      { wch: 10 }, // Stock
+      { wch: 45 }, // Descripción
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Plantilla_Productos");
+    XLSX.writeFile(workbook, "Plantilla_Productos_Bodega.xlsx");
+  }
+
+  // ── Cargar Productos desde Excel ──
+  async function handleImportarExcel(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+    setMensaje("");
+    setCargando(true);
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+
+      if (!rows || rows.length === 0) {
+        throw new Error("El archivo Excel seleccionado no contiene filas con datos.");
+      }
+
+      const nuevosProductos: any[] = [];
+      for (const r of rows) {
+        const nombre = (
+          r["Nombre del Producto"] ||
+          r["Nombre"] ||
+          r["nombre"] ||
+          r["Producto"] ||
+          ""
+        ).toString().trim();
+
+        const categoria = (
+          r["Categoría"] ||
+          r["Categoria"] ||
+          r["categoria"] ||
+          "otros"
+        ).toString().trim().toLowerCase();
+
+        const precioRaw = r["Precio"] || r["precio"] || r["Precio de Venta"];
+        const precio = parseInt(precioRaw, 10);
+
+        const precioCompRaw =
+          r["Precio Antes"] ||
+          r["precio_antes"] ||
+          r["Precio Comparación"] ||
+          r["precio_comparacion"];
+        const precio_comparacion = precioCompRaw ? parseInt(precioCompRaw, 10) : null;
+
+        const stockRaw = r["Stock"] || r["stock"] || r["Inventario"] || 0;
+        const stock = parseInt(stockRaw, 10);
+
+        const descripcion = (
+          r["Descripción"] ||
+          r["Descripcion"] ||
+          r["descripcion"] ||
+          ""
+        ).toString().trim() || null;
+
+        if (!nombre || isNaN(precio) || precio <= 0) continue;
+
+        nuevosProductos.push({
+          nombre,
+          categoria: categoria || "otros",
+          precio,
+          precio_comparacion: isNaN(precio_comparacion as number) ? null : precio_comparacion,
+          stock: isNaN(stock) ? 0 : stock,
+          descripcion,
+          imagenes: [],
+          activo: true,
+        });
+      }
+
+      if (nuevosProductos.length === 0) {
+        throw new Error(
+          "No se encontraron productos con formato válido (deben tener al menos Nombre y Precio mayor a 0)."
+        );
+      }
+
+      // Insertar en Supabase
+      let { error: insertError } = await supabase
+        .from("productos")
+        .insert(nuevosProductos);
+
+      // Fallback si la columna 'descripcion' o 'precio_comparacion' falta en Supabase
+      if (insertError && insertError.message.includes("schema cache")) {
+        const fallback = nuevosProductos.map((p) => {
+          const { descripcion, precio_comparacion, ...resto } = p;
+          return resto;
+        });
+        const { error: retryError } = await supabase
+          .from("productos")
+          .insert(fallback);
+
+        if (retryError) throw retryError;
+      } else if (insertError) {
+        throw insertError;
+      }
+
+      setMensaje(
+        `✓ ¡Se cargaron ${nuevosProductos.length} productos con éxito desde Excel! Puedes añadirles imágenes después editando cada uno.`
+      );
+      await cargar();
+    } catch (err: any) {
+      setError("Error al importar Excel: " + (err.message || "Archivo no compatible"));
+    } finally {
+      setCargando(false);
+      if (excelInputRef.current) excelInputRef.current.value = "";
     }
   }
 
@@ -215,17 +378,53 @@ export default function AdminProductos() {
 
   return (
     <div className="space-y-10">
-      {/* Título y Header */}
-      <div>
-        <span className="text-xs font-bold uppercase tracking-eyebrow text-accent">
-          Inventario &amp; Catálogo
-        </span>
-        <h1 className="font-inter font-black text-2xl sm:text-3xl text-ink mt-1">
-          Gestión de Bebidas y Stock
-        </h1>
-        <p className="text-xs text-ink-muted mt-1">
-          Cualquier cambio de precio, stock o fotos que hagas aquí se actualiza de inmediato en la tienda pública en vivo.
-        </p>
+      {/* Título y Header con Toolbar de Excel */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-eyebrow text-accent">
+            Inventario &amp; Catálogo
+          </span>
+          <h1 className="font-inter font-black text-2xl sm:text-3xl text-ink mt-1">
+            Gestión de Bebidas y Stock
+          </h1>
+          <p className="text-xs text-ink-muted mt-1">
+            Cualquier cambio de precio, stock o fotos que hagas aquí se actualiza de inmediato en la tienda pública en vivo.
+          </p>
+        </div>
+
+        {/* Botones de Plantilla e Importación Excel */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={descargarPlantillaExcel}
+            className="inline-flex items-center gap-2 bg-canvas hover:bg-surface text-ink border border-hairline px-4 py-2.5 rounded-btn text-xs font-semibold shadow-subtle transition-all active:scale-95"
+            title="Descargar archivo Excel con formato listo para rellenar"
+          >
+            <span className="text-sm">📊</span>
+            <span>Descargar Plantilla Excel</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => excelInputRef.current?.click()}
+            className="inline-flex flex-col items-start bg-ink hover:bg-ink-light text-white px-4 py-2 rounded-btn shadow-portrait transition-all active:scale-95 text-left"
+            title="Importar productos masivamente desde tu Excel completado"
+          >
+            <span className="text-xs font-bold flex items-center gap-1.5">
+              <span>📥</span> Cargar Productos
+            </span>
+            <span className="text-[9px] text-white/70 font-normal">
+              Desde la plantilla excel
+            </span>
+          </button>
+          <input
+            ref={excelInputRef}
+            type="file"
+            accept=".xlsx, .xls, .csv"
+            onChange={handleImportarExcel}
+            className="hidden"
+          />
+        </div>
       </div>
 
       {/* Formulario para Crear / Editar Producto */}
