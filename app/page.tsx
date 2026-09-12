@@ -12,9 +12,12 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getSiteConfig();
   const nombre = config.nombre_bodega || "Bodega Dnavits";
+  const fullTitle =
+    config.titulo_pestana ||
+    `${nombre} | Gaseosas, Cervezas, Aguas & Licores a Domicilio`;
 
   return {
-    title: `${nombre} | Gaseosas, Cervezas, Aguas & Licores a Domicilio`,
+    title: fullTitle,
     description: `${nombre} en Medellín. Bebidas frías, gaseosas por paca, cervezas nacionales e importadas y licores a domicilio.`,
     icons: config.favicon_url
       ? {
@@ -38,7 +41,14 @@ export default async function HomePage() {
         whatsappPedidos={config.whatsapp_pedidos}
       />
       <main className="pt-28">
-        <Hero whatsappPedidos={config.whatsapp_pedidos} />
+        <Hero
+          badge={config.hero_badge}
+          titulo={config.hero_titulo}
+          subtituloRainbow={config.hero_subtitulo_rainbow}
+          descripcion={config.hero_descripcion}
+          features={config.hero_features}
+          whatsappPedidos={config.whatsapp_pedidos}
+        />
         <Tienda />
       </main>
       <BodegaFooter
@@ -48,7 +58,10 @@ export default async function HomePage() {
         direccion={config.direccion_bodega}
       />
       <CartDrawer whatsapp={config.whatsapp_pedidos} />
-      <FloatingWhatsApp whatsapp={config.whatsapp_pedidos} />
+      <FloatingWhatsApp
+        whatsapp={config.whatsapp_pedidos}
+        visible={config.mostrar_whatsapp_flotante}
+      />
     </>
   );
 }

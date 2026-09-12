@@ -5,9 +5,12 @@ import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 interface FloatingWhatsAppProps {
   whatsapp?: string | null;
+  visible?:  boolean;
 }
 
-export function FloatingWhatsApp({ whatsapp }: FloatingWhatsAppProps) {
+export function FloatingWhatsApp({ whatsapp, visible = true }: FloatingWhatsAppProps) {
+  if (visible === false) return null;
+
   const wa = whatsapp || WHATSAPP_NUMBER;
   return (
     <aside aria-label="Contacto directo" className="fixed bottom-5 right-5 z-40">

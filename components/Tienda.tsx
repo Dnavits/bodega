@@ -110,19 +110,27 @@ export function Tienda() {
     };
   }, []);
 
-  // Categorías dinámicas: calculadas en vivo a partir de los productos en inventario
+  // Categorías dinámicas: ÚNICAMENTE se muestran las que tienen productos registrados
   const categoriasDisponibles = useMemo(() => {
     const set = new Set<string>();
-    // Categorías base recomendadas
-    ["gaseosas", "cervezas", "aguas", "licores"].forEach((c) => set.add(c));
-    // Nuevas categorías agregadas en tiempo real por el admin
     productos.forEach((p) => {
-      if (p.categoria && p.categoria.trim()) {
-        set.add(p.categoria.trim().toLowerCase());
+      const cat = p.categoria?.trim().toLowerCase();
+      if (cat) {
+        set.add(cat);
       }
     });
     return Array.from(set);
   }, [productos]);
+
+  // Si la categoría seleccionada ya no tiene productos, volver a "todos"
+  useEffect(() => {
+    if (
+      categoriaActiva !== "todos" &&
+      !categoriasDisponibles.includes(categoriaActiva.toLowerCase())
+    ) {
+      setCategoriaActiva("todos");
+    }
+  }, [categoriasDisponibles, categoriaActiva]);
 
   const productosFiltrados = useMemo(() => {
     return productos.filter((p) => {

@@ -21,9 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const config = await getSiteConfig();
   const nombre = config.nombre_bodega || "Bodega Dnavits";
 
+  const fullTitle =
+    config.titulo_pestana ||
+    `${nombre} | Gaseosas, Cervezas, Aguas & Licores a Domicilio`;
+
   return {
     title: {
-      default: `${nombre} | Gaseosas, Cervezas, Aguas & Licores a Domicilio`,
+      default: fullTitle,
       template: `%s · ${nombre}`,
     },
     description: `${nombre} en Medellín. Bebidas frías, gaseosas por paca, cervezas nacionales e importadas y licores a domicilio.`,

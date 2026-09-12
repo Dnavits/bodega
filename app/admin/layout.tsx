@@ -8,6 +8,7 @@ import {
   TrendingUpIcon,
   SettingsIcon,
   ShieldAdminIcon,
+  PaletteIcon,
 } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
@@ -97,15 +98,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
           >
             <PackageIcon className="w-4 h-4 text-emerald" />
-            <span>Inventario & Productos</span>
+            <span>Inventario &amp; Productos</span>
+          </Link>
+
+          <Link
+            href="/admin/personalizacion"
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
+          >
+            <PaletteIcon className="w-4 h-4 text-accent" />
+            <span>Personalización &amp; Portada</span>
           </Link>
 
           <Link
             href="/admin/configuracion"
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:text-ink hover:bg-surface transition-colors"
           >
-            <SettingsIcon className="w-4 h-4 text-accent" />
-            <span>Ajustes & Lista Blanca</span>
+            <SettingsIcon className="w-4 h-4 text-ink-muted" />
+            <span>Ajustes &amp; Lista Blanca</span>
           </Link>
         </nav>
 
