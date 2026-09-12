@@ -179,7 +179,7 @@ export function Tienda() {
         </div>
 
         {/* Dynamic Category Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none mb-8">
+        <div className="flex items-center gap-2 overflow-x-auto flex-nowrap pb-1 scrollbar-none mb-8">
           <button
             onClick={() => setCategoriaActiva("todos")}
             className={`px-4 py-2 rounded-btn text-xs font-semibold whitespace-nowrap transition-all active:scale-95 ${
@@ -212,7 +212,7 @@ export function Tienda() {
 
         {/* Product grid */}
         {cargando ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="rounded-card h-80 animate-shimmer border border-hairline bg-surface" />
             ))}
@@ -229,7 +229,7 @@ export function Tienda() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {productosFiltrados.map((p) => (
               <ProductCard key={p.id} producto={p} />
             ))}

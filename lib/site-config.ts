@@ -20,6 +20,10 @@ export type SiteConfig = {
   hero_descripcion:           string;
   hero_features:              string[];
   mostrar_whatsapp_flotante:  boolean;
+  horario_texto:              string;
+  horario_inicio:             string;
+  horario_fin:                string;
+  horario_dias:               string[];
 };
 
 const DEFAULT_CONFIG: SiteConfig = {
@@ -40,6 +44,10 @@ const DEFAULT_CONFIG: SiteConfig = {
   hero_descripcion:          "Gaseosas, cervezas, aguas y licores directo de la bodega a tu puerta. Precios directos, sin intermediarios, siempre fríos.",
   hero_features:             ["⚡ Entrega en 1-2 días hábiles", "❄️ Siempre frío", "💳 Nequi · Efectivo · Transferencia"],
   mostrar_whatsapp_flotante: true,
+  horario_texto:             'Lunes a Domingo: 9:00 AM - 11:00 PM',
+  horario_inicio:            '09:00',
+  horario_fin:               '23:00',
+  horario_dias:              ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],
 };
 
 export async function getSiteConfig(): Promise<SiteConfig> {
@@ -84,6 +92,10 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       hero_descripcion:          data.hero_descripcion          ?? DEFAULT_CONFIG.hero_descripcion,
       hero_features:             features,
       mostrar_whatsapp_flotante: data.mostrar_whatsapp_flotante !== false,
+      horario_texto:             data.horario_texto ?? DEFAULT_CONFIG.horario_texto,
+      horario_inicio:            data.horario_inicio ?? DEFAULT_CONFIG.horario_inicio,
+      horario_fin:               data.horario_fin ?? DEFAULT_CONFIG.horario_fin,
+      horario_dias:              Array.isArray(data.horario_dias) ? data.horario_dias : DEFAULT_CONFIG.horario_dias,
     };
   } catch {
     return DEFAULT_CONFIG;

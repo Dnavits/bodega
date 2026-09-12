@@ -85,10 +85,17 @@ export function CartDrawer({ whatsapp, nombreBodega }: CartDrawerProps) {
                     <span className="text-xs font-bold w-4 text-center text-ink">{item.cantidad}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.cantidad + 1)}
-                      className="w-6 h-6 flex items-center justify-center bg-canvas border border-hairline rounded-lg text-xs font-bold text-ink hover:bg-surface transition-colors"
+                      disabled={item.stock !== undefined && item.cantidad >= item.stock}
+                      className="w-6 h-6 flex items-center justify-center bg-canvas border border-hairline rounded-lg text-xs font-bold text-ink hover:bg-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={item.stock !== undefined && item.cantidad >= item.stock ? `Máximo ${item.stock} unidades en stock` : undefined}
                     >
                       +
                     </button>
+                    {item.stock !== undefined && item.cantidad >= item.stock && (
+                      <span className="text-[10px] text-warning font-semibold">
+                        Máx. ({item.stock})
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button

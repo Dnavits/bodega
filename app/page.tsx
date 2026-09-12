@@ -6,6 +6,7 @@ import { Tienda } from "@/components/Tienda";
 import { CartDrawer } from "@/components/CartDrawer";
 import { BodegaFooter } from "@/components/BodegaFooter";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { CookieBanner } from "@/components/CookieBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -55,9 +56,13 @@ export default async function HomePage() {
       </main>
       <BodegaFooter
         nombreBodega={config.nombre_bodega}
+        logoUrl={config.logo_url}
         whatsapp={config.whatsapp_pedidos}
         telefono={config.telefono_contacto}
         direccion={config.direccion_bodega}
+        horarioTexto={config.horario_texto}
+        horarioInicio={config.horario_inicio}
+        horarioFin={config.horario_fin}
       />
       <CartDrawer
         whatsapp={config.whatsapp_pedidos}
@@ -68,6 +73,7 @@ export default async function HomePage() {
         nombreBodega={config.nombre_bodega}
         visible={config.mostrar_whatsapp_flotante}
       />
+      <CookieBanner />
     </>
   );
 }

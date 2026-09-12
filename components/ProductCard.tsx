@@ -51,13 +51,19 @@ export function ProductCard({ producto }: { producto: ProductoBodega }) {
 
   function handleAdd() {
     if (agotado) return;
-    addItem({ id: producto.id, nombre: producto.nombre, precio: producto.precio, imagen: imgSrc });
+    addItem({
+      id: producto.id,
+      nombre: producto.nombre,
+      precio: producto.precio,
+      imagen: imgSrc,
+      stock: producto.stock,
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
   }
 
   return (
-    <article className="group bg-canvas rounded-card border border-hairline shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden">
+    <article className="group bg-canvas rounded-card border border-hairline shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col min-w-0 overflow-hidden">
       {/* Image */}
       <div className="relative aspect-square bg-surface overflow-hidden flex items-center justify-center p-4">
         <img
@@ -108,13 +114,19 @@ export function ProductCard({ producto }: { producto: ProductoBodega }) {
             type="button"
             onClick={handleAdd}
             disabled={agotado}
-            className={`inline-flex items-center gap-1 px-4 py-2 rounded-btn text-xs font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-              added
+            className={`inline-flex items-center justify-center gap-1 px-3 py-2 rounded-btn text-xs font-bold transition-all active:scale-95 disabled:cursor-not-allowed ${
+              agotado
+                ? "bg-surface text-ink-faint border border-hairline text-[11px]"
+                : added
                 ? "bg-emerald text-white"
                 : "bg-ink hover:bg-ink-light text-white"
             }`}
           >
-            {added ? "¡Listo!" : <><PlusIcon className="w-3 h-3" /> Agregar</>}
+            {agotado
+              ? "Stock no disponible por ahora"
+              : added
+              ? "¡Listo!"
+              : <><PlusIcon className="w-3 h-3" /> Agregar</>}
           </button>
         </div>
       </div>

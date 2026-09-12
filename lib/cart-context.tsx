@@ -8,6 +8,7 @@ export type CartItem = {
   precio:   number;
   imagen:   string;
   cantidad: number;
+  stock?:   number;
 };
 
 type CartContextType = {
@@ -52,8 +53,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prev => {
       const existing = prev.find(i => i.id === newItem.id);
       if (existing) {
+        const maxStock = newItem.stock ?? existing.stock;
+        if (maxStock !== undefined && existing.cantidad >= maxStock) {
+          return prev;
+        }
         return prev.map(i =>
-          i.id === newItem.id ? { ...i, cantidad: i.cantidad + 1 } : i
+          i.id === newItem.id ? { ...i, cantidad: i.cantidad + 1, stock: maxStock } : i
         );
       }
       return [...prev, { ...newItem, cantidad: 1 }];
@@ -69,7 +74,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setItems(prev => prev.filter(i => i.id !== id));
     } else {
       setItems(prev =>
-        prev.map(i => i.id === id ? { ...i, cantidad } : i)
+        prev.map(i => {
+          if (i.id !== id) return i;
+          const maxStock = i.stock;
+          const finalCantidad = maxStock !== undefined ? Math.min(cantidad, maxStock) : cantidad;
+          return { ...i, cantidad: finalCantidad };
+        })
       );
     }
   }, []);

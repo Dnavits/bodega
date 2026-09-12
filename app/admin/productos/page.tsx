@@ -73,6 +73,12 @@ export default function AdminProductos() {
   async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setError('Solo se permiten imágenes JPG o PNG');
+      return;
+    }
+
     try {
       const processed = await processImageFile(file, IMAGE_SPECS.producto);
       setForm((prev) => ({ ...prev, imagen_url: processed }));
@@ -138,6 +144,11 @@ export default function AdminProductos() {
   async function handleImportarExcel(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel','text/csv'].includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+      setError('Solo se permiten archivos Excel o CSV');
+      return;
+    }
 
     setError("");
     setMensaje("");
@@ -580,7 +591,7 @@ export default function AdminProductos() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                 onChange={handleImageFile}
                 className="hidden"
               />

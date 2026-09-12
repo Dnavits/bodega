@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { GoogleIcon, BeerIcon, EyeIcon, EyeOffIcon } from "@/components/Icons";
+import { BeerIcon, EyeIcon, EyeOffIcon } from "@/components/Icons";
 
 /* ── Login form (client component that uses useSearchParams) ── */
 function LoginForm() {
@@ -16,7 +16,7 @@ function LoginForm() {
   const [error,           setError]           = useState("");
   const [mensaje,         setMensaje]         = useState("");
   const [cargando,        setCargando]        = useState(false);
-  const [googleLoading,   setGoogleLoading]   = useState(false);
+  const [nombreBodega,    setNombreBodega]    = useState("Bodega Dnavits");
 
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -30,24 +30,12 @@ function LoginForm() {
     });
   }, [router, redirectPath, supabase]);
 
-  /* ── Google OAuth ── */
-  async function handleGoogle() {
-    setError("");
-    setGoogleLoading(true);
-    try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const { error: err } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${origin}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`,
-        },
-      });
-      if (err) { setError(err.message); setGoogleLoading(false); }
-    } catch {
-      setError("No se pudo conectar con Google.");
-      setGoogleLoading(false);
-    }
-  }
+  // Fetch nombre_bodega
+  useEffect(() => {
+    supabase.from("configuracion").select("nombre_bodega").limit(1).maybeSingle().then(({ data }) => {
+      if (data?.nombre_bodega) setNombreBodega(data.nombre_bodega);
+    });
+  }, [supabase]);
 
   /* ── Email / Password ── */
   async function handleSubmit(e: React.FormEvent) {
@@ -55,25 +43,42 @@ function LoginForm() {
     setError("");
     setMensaje("");
 
-    if (!email || !password) return setError("Completa correo y contraseña.");
-    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) return setError("Completa correo y contraseña.");
+
+    // Validación estricta de correo (solo letras, números y símbolos estándar de correo)
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      return setError("Por favor ingresa un correo válido (ej: cliente@gmail.com). Sin símbolos raros.");
+    }
+
+    if (trimmedPassword.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+
+    if (modo === "registrarse") {
+      const nombreTrimmed = nombre.trim();
+      if (!/^[a-zA-Z\u00C0-\u017F\s'-]{2,80}$/.test(nombreTrimmed)) {
+        return setError("El nombre debe contener solo letras y espacios (2 a 80 caracteres).");
+      }
+    }
 
     setCargando(true);
 
     if (modo === "entrar") {
       const { error: err } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password.trim(),
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
       setCargando(false);
 
       if (err) {
         if (err.message.includes("Invalid login credentials")) {
-          setError("Correo o contraseña incorrectos. Si aún no tienes cuenta, haz clic en '¿No tienes cuenta?' abajo.");
+          setError("Correo o contraseña incorrectos. Si aún no tienes cuenta, regístrate.");
         } else if (err.message.includes("Email not confirmed")) {
           setError("Debes confirmar tu correo antes de iniciar sesión.");
         } else {
-          setError(err.message);
+          setError("Error al iniciar sesión: " + err.message);
         }
         return;
       }
@@ -81,8 +86,8 @@ function LoginForm() {
       router.refresh();
     } else {
       const { data, error: err } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password.trim(),
+        email: trimmedEmail,
+        password: trimmedPassword,
         options: {
           data: { nombre: nombre.trim() },
           emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
@@ -94,7 +99,7 @@ function LoginForm() {
         router.push(redirectPath);
         router.refresh();
       } else {
-        setMensaje("✓ ¡Cuenta creada! Ya puedes iniciar sesión con tu correo y contraseña.");
+        setMensaje("✓ ¡Cuenta creada! Revisa tu correo o inicia sesión ahora.");
         setModo("entrar");
       }
     }
@@ -121,27 +126,7 @@ function LoginForm() {
           <h1 className="font-inter font-black text-2xl sm:text-3xl text-ink tracking-tight">
             {modo === "entrar" ? "Bienvenido de vuelta" : "Crear cuenta"}
           </h1>
-          <p className="text-sm text-ink-muted mt-1">Bodega Dnavits · Bebidas &amp; Licores</p>
-        </div>
-
-        {/* Google */}
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={googleLoading || cargando}
-          className="w-full flex items-center justify-center gap-3 border border-hairline bg-canvas hover:bg-surface rounded-btn px-4 py-3 text-sm font-semibold text-ink shadow-subtle transition-all active:scale-95 disabled:opacity-60 mb-6"
-        >
-          <GoogleIcon className="w-5 h-5" />
-          {googleLoading ? "Conectando..." : "Continuar con Google"}
-        </button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 h-px bg-divider" />
-          <span className="text-[11px] uppercase tracking-eyebrow text-ink-faint font-semibold">
-            O con tu correo
-          </span>
-          <div className="flex-1 h-px bg-divider" />
+          <p className="text-sm text-ink-muted mt-1">{nombreBodega} · Bebidas &amp; Licores</p>
         </div>
 
         {/* Form */}
@@ -212,7 +197,7 @@ function LoginForm() {
 
           <button
             type="submit"
-            disabled={cargando || googleLoading}
+            disabled={cargando}
             className="w-full bg-ink hover:bg-ink-light text-white font-bold py-3 rounded-btn shadow-portrait transition-all active:scale-95 disabled:opacity-60 text-sm"
           >
             {cargando
@@ -236,11 +221,10 @@ function LoginForm() {
           </button>
         </div>
 
-        {/* Admin hint */}
+        {/* Store message */}
         <div className="mt-5 pt-4 border-t border-divider text-center">
           <p className="text-[11px] text-ink-faint leading-relaxed">
-            ¿Eres administrador? Si tu correo está en la lista blanca, al iniciar sesión tendrás acceso automático a{" "}
-            <code className="text-accent font-mono">/admin</code>.
+            Crea tu cuenta para hacer seguimiento de tus pedidos, ver tu historial y recibir ofertas exclusivas.
           </p>
         </div>
       </div>

@@ -5,22 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { PaletteIcon, PlusIcon, TrashIcon } from "@/components/Icons";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
 
-const SQL_MIGRATION_SCRIPT = `-- ==============================================================================
--- BODEGA DNAVITS: HABILITAR TODAS LAS COLUMNAS DE PERSONALIZACIÓN EN SUPABASE
--- ==============================================================================
-alter table public.configuracion add column if not exists titulo_pestana text;
-alter table public.configuracion add column if not exists hero_badge text default 'DOMICILIOS EXPRESS · MEDELLÍN';
-alter table public.configuracion add column if not exists hero_titulo text default 'Tus bebidas heladas,';
-alter table public.configuracion add column if not exists hero_subtitulo_rainbow text default 'en minutos';
-alter table public.configuracion add column if not exists hero_descripcion text default 'Gaseosas, cervezas, aguas y licores directo de la bodega a tu puerta. Precios directos, sin intermediarios, siempre fríos.';
-alter table public.configuracion add column if not exists hero_features text[] default '{"⚡ Entrega en <45 min", "❄️ Siempre frío", "💳 Nequi · Efectivo · Transferencia"}';
-alter table public.configuracion add column if not exists mostrar_whatsapp_flotante boolean default true;
-alter table public.configuracion add column if not exists banner_anuncio text default '🍻 Bebidas heladas a domicilio en Medellín';
-alter table public.configuracion add column if not exists nombre_bodega text default 'Bodega Dnavits';
-alter table public.configuracion add column if not exists logo_url text;
-alter table public.configuracion add column if not exists favicon_url text;
-
-notify pgrst, 'reload schema';`;
 
 export default function AdminPersonalizacion() {
   const supabase = createClient();
@@ -51,12 +35,16 @@ export default function AdminPersonalizacion() {
   // WhatsApp Flotante
   const [mostrarWhatsappFlotante, setMostrarWhatsappFlotante] = useState(true);
 
+  // Horario
+  const [horarioTexto, setHorarioTexto] = useState("Lunes a Domingo: 9:00 AM - 11:00 PM");
+  const [horarioInicio, setHorarioInicio] = useState("09:00");
+  const [horarioFin, setHorarioFin] = useState("23:00");
+  const [horarioDias, setHorarioDias] = useState<string[]>(["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]);
+
   // Estados UI
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [necesitaSql, setNecesitaSql] = useState(false);
-  const [copiado, setCopiado] = useState(false);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +78,10 @@ export default function AdminPersonalizacion() {
         if (config.mostrar_whatsapp_flotante !== undefined) {
           setMostrarWhatsappFlotante(config.mostrar_whatsapp_flotante !== false);
         }
+        if (config.horario_texto) setHorarioTexto(config.horario_texto);
+        if (config.horario_inicio) setHorarioInicio(config.horario_inicio);
+        if (config.horario_fin) setHorarioFin(config.horario_fin);
+        if (config.horario_dias) setHorarioDias(config.horario_dias);
       }
     } catch (err: any) {
       console.error("Error al cargar personalización:", err);
@@ -142,20 +134,10 @@ export default function AdminPersonalizacion() {
     e.preventDefault();
     setError("");
     setMensaje("");
-    setNecesitaSql(false);
     setGuardando(true);
 
-    let targetId = configId;
-    if (targetId === null || targetId === undefined) {
-      const { data: cur } = await supabase
-        .from("configuracion")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-      if (cur) targetId = cur.id;
-    }
-
     const payload: any = {
+      id: configId !== null && configId !== undefined ? configId : 1,
       nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
       subtitulo_bodega: subtituloBodega.trim() || "Licores & Bebidas Heladas",
       titulo_pestana: tituloPestana.trim() || null,
@@ -168,42 +150,26 @@ export default function AdminPersonalizacion() {
       hero_descripcion: heroDescripcion.trim() || "",
       hero_features: heroFeatures,
       mostrar_whatsapp_flotante: mostrarWhatsappFlotante,
+      horario_texto: horarioTexto.trim() || "Lunes a Domingo: 9:00 AM - 11:00 PM",
+      horario_inicio: horarioInicio.trim() || "09:00",
+      horario_fin: horarioFin.trim() || "23:00",
+      horario_dias: horarioDias,
     };
 
-    let updateError: any = null;
+    let { error: updateError } = await supabase
+      .from("configuracion")
+      .upsert(payload);
 
-    if (targetId !== null && targetId !== undefined) {
-      const res = await supabase
-        .from("configuracion")
-        .update(payload)
-        .eq("id", targetId);
-      updateError = res.error;
-    } else {
-      const res = await supabase
-        .from("configuracion")
-        .insert([payload]);
-      updateError = res.error;
-    }
-
-    // Si faltan columnas avanzadas en Supabase
-    if (updateError && (updateError.message.includes("schema cache") || updateError.message.includes("column"))) {
-      const fallbackPayload = {
-        nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
-        logo_url: logoUrl.trim() || null,
-        favicon_url: faviconUrl.trim() || null,
-      };
-
-      if (targetId !== null && targetId !== undefined) {
-        await supabase
-          .from("configuracion")
-          .update(fallbackPayload)
-          .eq("id", targetId);
+    if (updateError && updateError.message?.includes("column")) {
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.horario_texto;
+      delete fallbackPayload.horario_inicio;
+      delete fallbackPayload.horario_fin;
+      delete fallbackPayload.horario_dias;
+      const retry = await supabase.from("configuracion").upsert(fallbackPayload);
+      if (!retry.error) {
+        updateError = null;
       }
-
-      setGuardando(false);
-      setMensaje("✓ El nombre de bodega, logo y favicon se guardaron. Para los textos del Hero, ejecuta el script SQL en Supabase.");
-      setNecesitaSql(true);
-      return;
     }
 
     setGuardando(false);
@@ -214,12 +180,6 @@ export default function AdminPersonalizacion() {
     }
 
     setMensaje("✓ ¡Personalización guardada con éxito! Los cambios ya son visibles en la tienda.");
-  }
-
-  function handleCopiarSql() {
-    navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2500);
   }
 
   return (
@@ -237,31 +197,7 @@ export default function AdminPersonalizacion() {
         </p>
       </div>
 
-      {/* AVISO SQL SI FALTAN COLUMNAS */}
-      {necesitaSql && (
-        <div className="bg-sky/60 border-2 border-accent/40 rounded-card p-6 shadow-card animate-fade-in-up">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="font-inter font-bold text-sm text-ink flex items-center gap-2">
-                <span>⚡ Habilitar Columnas de Personalización en Supabase</span>
-              </h3>
-              <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Para guardar todos los textos del Hero y título completo de pestaña, ejecuta este SQL en Supabase:
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleCopiarSql}
-              className="bg-accent hover:bg-accent-hover text-white text-xs font-bold px-4 py-2 rounded-btn shadow-portrait transition-all active:scale-95 shrink-0"
-            >
-              {copiado ? "✓ ¡Copiado!" : "Copiar Código SQL"}
-            </button>
-          </div>
-          <pre className="mt-3 p-3.5 bg-canvas border border-hairline rounded-input text-[11px] text-ink font-mono overflow-x-auto max-h-40">
-            {SQL_MIGRATION_SCRIPT}
-          </pre>
-        </div>
-      )}
+
 
       <form onSubmit={guardarPersonalizacion} className="space-y-8">
         {/* BLOQUE 1: IDENTIDAD Y PESTAÑA DEL NAVEGADOR */}
@@ -567,6 +503,83 @@ export default function AdminPersonalizacion() {
                   <PlusIcon className="w-3.5 h-3.5" />
                   <span>Agregar</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BLOQUE: HORARIO DE ATENCION */}
+        <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-4">
+          <div className="flex items-center gap-3 border-b border-divider pb-4">
+            <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
+              <span className="text-base">⏰</span>
+            </div>
+            <div>
+              <h2 className="font-inter font-bold text-base text-ink">
+                Horario de Atención
+              </h2>
+              <p className="text-xs text-ink-muted">
+                Configura los días y horas en los que la bodega está abierta.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+                Texto descriptivo del horario
+              </label>
+              <input
+                type="text"
+                value={horarioTexto}
+                onChange={(e) => setHorarioTexto(e.target.value)}
+                placeholder="Ej: Lunes a Domingo: 9:00 AM - 11:00 PM"
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+                Hora de apertura
+              </label>
+              <input
+                type="time"
+                value={horarioInicio}
+                onChange={(e) => setHorarioInicio(e.target.value)}
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+                Hora de cierre
+              </label>
+              <input
+                type="time"
+                value={horarioFin}
+                onChange={(e) => setHorarioFin(e.target.value)}
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
+                Días de atención
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map(dia => (
+                  <label key={dia} className="flex items-center gap-1.5 bg-surface px-3 py-1.5 rounded border border-hairline text-sm">
+                    <input 
+                      type="checkbox" 
+                      checked={horarioDias.includes(dia)}
+                      onChange={(e) => {
+                        if (e.target.checked) setHorarioDias([...horarioDias, dia]);
+                        else setHorarioDias(horarioDias.filter(d => d !== dia));
+                      }}
+                    />
+                    {dia}
+                  </label>
+                ))}
               </div>
             </div>
           </div>

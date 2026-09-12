@@ -31,6 +31,8 @@ export default function CheckoutPage() {
     whatsapp: WHATSAPP_NUMBER,
   });
 
+  const [errores, setErrores] = useState<Record<string, string>>({});
+
   useEffect(() => {
     async function cargarConfig() {
       try {
@@ -57,10 +59,70 @@ export default function CheckoutPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setErrores({});
+
+    const nuevosErrores: Record<string, string> = {};
 
     if (!nombre.trim() || !telefono.trim() || !direccion.trim() || !barrio.trim()) {
       setError("Por favor completa los datos de entrega requeridos.");
       return;
+    }
+
+    if (!/^[a-zA-Z\u00C0-\u017F\s'-]{2,100}$/.test(nombre.trim())) {
+      nuevosErrores.nombre = "El nombre ingresado no es válido (2-100 letras).";
+    }
+
+    if (!/^[+]?[0-9]{7,15}$/.test(telefono.trim())) {
+      nuevosErrores.telefono = "El teléfono ingresado no es válido (solo números, 7-15 dígitos).";
+    }
+
+    if (email.trim() && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
+      nuevosErrores.email = "El correo electrónico ingresado no es válido.";
+    }
+
+    if (direccion.trim().length < 5 || direccion.trim().length > 200) {
+      nuevosErrores.direccion = "La dirección debe tener entre 5 y 200 caracteres.";
+    }
+
+    if (barrio.trim().length < 2 || barrio.trim().length > 100) {
+      nuevosErrores.barrio = "El barrio debe tener entre 2 y 100 caracteres.";
+    }
+
+    if (notas.trim() && notas.trim().length > 500) {
+      nuevosErrores.notas = "Las notas no pueden exceder los 500 caracteres.";
+    }
+
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrores(nuevosErrores);
+      setError("Por favor corrige los errores en el formulario.");
+      return;
+    }
+
+    const realProductIds = items.map(i => i.id).filter(id => !id.startsWith("sample-"));
+    if (realProductIds.length > 0) {
+      const supabase = createClient();
+      const { data: stockData, error: stockError } = await supabase
+        .from("productos")
+        .select("id, stock, nombre")
+        .in("id", realProductIds);
+
+      if (stockError) {
+        setError("Error al verificar el stock. Intenta de nuevo.");
+        return;
+      }
+
+      for (const item of items) {
+        if (item.id.startsWith("sample-")) continue;
+        const prodDb = stockData?.find(p => p.id === item.id);
+        if (!prodDb || prodDb.stock === undefined || prodDb.stock === 0) {
+          setError(`${item.nombre} no tiene stock disponible actualmente.`);
+          return;
+        }
+        if (item.cantidad > prodDb.stock) {
+          setError(`No hay suficiente stock de ${prodDb.nombre || item.nombre}. Disponible: ${prodDb.stock} unidades.`);
+          return;
+        }
+      }
     }
 
     setCargando(true);
@@ -230,9 +292,10 @@ export default function CheckoutPage() {
                 placeholder="Tu nombre y apellido"
                 className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
               />
+              {errores.nombre && <p className="text-danger text-[11px] mt-1">{errores.nombre}</p>}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
                   WhatsApp / Celular *
@@ -245,6 +308,7 @@ export default function CheckoutPage() {
                   placeholder="301 000 0000"
                   className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
                 />
+                {errores.telefono && <p className="text-danger text-[11px] mt-1">{errores.telefono}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
@@ -257,10 +321,11 @@ export default function CheckoutPage() {
                   placeholder="tu@correo.com"
                   className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
                 />
+                {errores.email && <p className="text-danger text-[11px] mt-1">{errores.email}</p>}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
                   Dirección de Entrega *
@@ -273,6 +338,7 @@ export default function CheckoutPage() {
                   placeholder="Calle / Cra / Apto"
                   className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
                 />
+                {errores.direccion && <p className="text-danger text-[11px] mt-1">{errores.direccion}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5 h-4 leading-none">
@@ -286,6 +352,7 @@ export default function CheckoutPage() {
                   placeholder="Laureles, Poblado, etc."
                   className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
                 />
+                {errores.barrio && <p className="text-danger text-[11px] mt-1">{errores.barrio}</p>}
               </div>
             </div>
 
@@ -322,6 +389,7 @@ export default function CheckoutPage() {
                 placeholder="¿Con cuánto billete pagas? ¿Alguna indicación para el domiciliario?"
                 className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2 text-xs text-ink placeholder-ink-faint outline-none resize-none"
               />
+              {errores.notas && <p className="text-danger text-[11px] mt-1">{errores.notas}</p>}
             </div>
 
             {error && (

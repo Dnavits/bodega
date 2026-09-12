@@ -37,5 +37,11 @@ alter table public.pedidos add column if not exists barrio text default '';
 alter table public.pedidos add column if not exists ciudad text default 'Medellín';
 alter table public.pedidos add column if not exists numero_orden serial;
 
+-- Horario de la bodega
+alter table public.configuracion add column if not exists horario_texto text default 'Lunes a Domingo: 9:00 AM - 11:00 PM';
+alter table public.configuracion add column if not exists horario_inicio time default '09:00';
+alter table public.configuracion add column if not exists horario_fin time default '23:00';
+alter table public.configuracion add column if not exists horario_dias text[] default '{"Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"}';
+
 -- 4. Recargar la memoria del servidor de inmediato
 notify pgrst, 'reload schema';
