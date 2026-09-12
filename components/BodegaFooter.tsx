@@ -1,49 +1,59 @@
 import { BeerIcon, WhatsAppIcon } from "@/components/Icons";
+import { WHATSAPP_NUMBER, BODEGA_CIUDAD } from "@/lib/constants";
 
-export function BodegaFooter() {
+interface BodegaFooterProps {
+  whatsapp?: string | null;
+  telefono?: string | null;
+  direccion?: string | null;
+}
+
+export function BodegaFooter({ whatsapp, telefono, direccion }: BodegaFooterProps) {
+  const wa = whatsapp || WHATSAPP_NUMBER;
+  const waUrl = `https://wa.me/${wa}`;
+
   return (
-    <footer id="contacto" className="bg-vault-950 border-t border-vault-800 text-vault-100/70 pt-16 pb-12">
+    <footer id="contacto" className="bg-surface border-t border-hairline text-ink-muted pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Marca y Misión */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber flex items-center justify-center text-vault-950 font-black">
-                <BeerIcon className="w-6 h-6 text-vault-950" />
+              <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center text-white font-black shadow-portrait">
+                <BeerIcon className="w-5 h-5 text-white" />
               </div>
-              <span className="font-roboto font-black text-xl text-foam tracking-tight">
+              <span className="font-inter font-black text-xl text-ink tracking-tight">
                 BODEGA DNAVITS
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-vault-100/60 leading-relaxed max-w-sm">
+            <p className="text-xs sm:text-sm text-ink-muted leading-relaxed max-w-sm">
               Tu distribuidora y bodega de bebidas de confianza en Medellín. Gaseosas por unidad y paca, cervezas nacionales e importadas, aguas purificadas y licores para eventos, tiendas y hogares.
             </p>
           </div>
 
           {/* Enlaces Rápidos */}
           <div>
-            <h4 className="font-roboto font-bold text-xs uppercase tracking-wider text-foam mb-4">
+            <h4 className="font-inter font-bold text-xs uppercase tracking-eyebrow text-ink mb-4">
               Enlaces
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <a href="#catalogo" className="hover:text-amber-light transition-colors">
-                  Catálogo de Gaseosas
+                <a href="#catalogo" className="hover:text-ink transition-colors">
+                  Catálogo de Bebidas
                 </a>
               </li>
               <li>
-                <a href="#catalogo" className="hover:text-amber-light transition-colors">
-                  Cervezas & Licores
-                </a>
-              </li>
-              <li>
-                <a href="/login" className="hover:text-amber-light transition-colors">
+                <a href="/login" className="hover:text-ink transition-colors">
                   Acceso Administrador / Clientes
                 </a>
               </li>
               <li>
-                <a href="/admin" className="hover:text-amber-light transition-colors">
+                <a href="/admin" className="hover:text-ink transition-colors">
                   Dashboard de Control
+                </a>
+              </li>
+              <li>
+                <a href="/checkout" className="hover:text-ink transition-colors">
+                  Finalizar Pedido
                 </a>
               </li>
             </ul>
@@ -51,28 +61,29 @@ export function BodegaFooter() {
 
           {/* Domicilios & WhatsApp */}
           <div>
-            <h4 className="font-roboto font-bold text-xs uppercase tracking-wider text-foam mb-4">
+            <h4 className="font-inter font-bold text-xs uppercase tracking-eyebrow text-ink mb-4">
               Atención Inmediata
             </h4>
             <div className="space-y-3 text-xs">
-              <p>📍 Medellín, Antioquia (Valle de Aburrá)</p>
+              <p>📍 {direccion || `${BODEGA_CIUDAD}, Antioquia (Valle de Aburrá)`}</p>
               <p>⏰ Lunes a Domingo: 9:00 AM - 11:00 PM</p>
+              {telefono && <p>📞 Teléfono: {telefono}</p>}
               <a
-                href="https://wa.me/573019519391"
+                href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-emerald/20 border border-emerald/40 text-emerald-light font-bold px-3 py-2 rounded-xl hover:bg-emerald/30 transition-colors"
+                className="inline-flex items-center gap-2 bg-emerald-soft text-emerald font-bold px-3 py-2 rounded-btn border border-emerald/20 hover:bg-emerald hover:text-white transition-all text-xs"
               >
                 <WhatsAppIcon className="w-4 h-4" />
-                <span>+57 301 951 9391</span>
+                <span>WhatsApp: +{wa}</span>
               </a>
             </div>
           </div>
         </div>
 
-        <div className="pt-8 border-t border-vault-800 text-center text-xs text-vault-100/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="pt-8 border-t border-divider text-center text-xs text-ink-faint flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© {new Date().getFullYear()} Bodega Dnavits. Todos los derechos reservados.</p>
-          <p>Medellín, Colombia · Distribución de Bebidas</p>
+          <p>{BODEGA_CIUDAD}, Colombia · Distribución de Bebidas</p>
         </div>
       </div>
     </footer>

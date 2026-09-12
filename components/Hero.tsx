@@ -3,75 +3,82 @@
 import React, { useState } from "react";
 import { BeerIcon, WhatsAppIcon } from "@/components/Icons";
 
-const BACKUP_HERO_IMAGE = "https://images.unsplash.com/photo-1581636625402-29b2a704ef13?q=80&w=1600&auto=format&fit=crop";
+interface HeroProps {
+  whatsappPedidos?: string | null;
+}
 
-export function Hero() {
-  const [heroImg, setHeroImg] = useState("https://images.unsplash.com/photo-1527061011665-3652c757a4d4?q=80&w=1600&auto=format&fit=crop");
+const FALLBACK_WA = "573019519391";
+
+export function Hero({ whatsappPedidos }: HeroProps) {
+  const wa = whatsappPedidos || FALLBACK_WA;
+  const waUrl = `https://wa.me/${wa}`;
 
   return (
-    <section id="inicio" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden pt-32 pb-16">
-      {/* Fondo Nocturno */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src={heroImg}
-          alt="Bodega Dnavits - Bebidas Frías y Cervezas"
-          onError={() => setHeroImg(BACKUP_HERO_IMAGE)}
-          className="w-full h-full object-cover object-center scale-105 transition-transform duration-1000 opacity-25"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-vault-950 via-vault-950/80 to-vault-950/60 z-10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-vault-950 via-vault-900/50 to-vault-950 z-10" />
+    <section id="inicio" className="relative bg-canvas py-20 sm:py-28 overflow-hidden">
+      {/* Fondo decorativo suave */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-sky/40 rounded-full blur-3xl opacity-50" />
+        <div className="absolute bottom-0 right-0 w-72 h-72 bg-mint/30 rounded-full blur-3xl opacity-40" />
       </div>
 
-      {/* Contenido Central */}
-      <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-vault-900/90 border border-vault-800 text-accent-light text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full mb-6 shadow-sm">
-          <BeerIcon className="w-4 h-4 text-accent" />
-          <span>Bodega Mayorista & al Detal · Envíos Express en Medellín</span>
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Eyebrow badge */}
+        <div className="inline-flex items-center gap-2 bg-sky text-accent text-[11px] font-bold uppercase tracking-eyebrow px-3 py-1 rounded-tag mb-8">
+          <BeerIcon className="w-3.5 h-3.5" />
+          <span>Domicilios Express · Medellín</span>
         </div>
 
-        {/* Título Principal con degradado azul tecnológico y plateado */}
-        <h1 className="font-roboto font-black text-4xl sm:text-6xl md:text-7xl text-foam tracking-tight leading-[1.1] max-w-4xl">
+        {/* Headline — Portrait style: tight tracking, black weight */}
+        <h1 className="font-inter font-black text-4xl sm:text-6xl md:text-7xl text-ink tracking-display leading-none">
           Tus bebidas heladas,{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-light via-blue-400 to-indigo-300">
-            directo a tu puerta
-          </span>
+          <br className="hidden sm:block" />
+          <em className="not-italic text-rainbow">en minutos</em>
         </h1>
 
-        {/* Subtítulo */}
-        <p className="mt-6 text-base sm:text-xl text-vault-100/70 font-normal max-w-2xl leading-relaxed">
-          Gaseosas en botella y lata, cervezas nacionales e importadas, agua purificada, hielo y licores. Precios directos de bodega sin intermediarios.
+        {/* Subtext */}
+        <p className="mt-6 text-base sm:text-lg text-ink-muted font-normal max-w-xl mx-auto leading-relaxed">
+          Gaseosas, cervezas, aguas y licores directo de la bodega a tu puerta.
+          Precios directos, sin intermediarios, siempre fríos.
         </p>
 
-        {/* Beneficios Clave */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs font-semibold text-vault-100/80">
-          <span className="bg-vault-900/80 border border-vault-800 px-3.5 py-1.5 rounded-xl">
-            ⚡ Entregas en menos de 45 min
-          </span>
-          <span className="bg-vault-900/80 border border-vault-800 px-3.5 py-1.5 rounded-xl">
-            ❄️ Siempre al clima o bajo cero
-          </span>
-          <span className="bg-vault-900/80 border border-vault-800 px-3.5 py-1.5 rounded-xl">
-            💳 Efectivo, Nequi y Transferencia
-          </span>
+        {/* Feature pills */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-ink-muted">
+          <span className="bg-canvas border border-hairline rounded-tag px-3.5 py-1.5 shadow-subtle">⚡ Entrega en &lt;45 min</span>
+          <span className="bg-canvas border border-hairline rounded-tag px-3.5 py-1.5 shadow-subtle">❄️ Siempre frío</span>
+          <span className="bg-canvas border border-hairline rounded-tag px-3.5 py-1.5 shadow-subtle">💳 Nequi · Efectivo · Transferencia</span>
         </div>
 
-        {/* Botones de Acción */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md">
+        {/* CTAs */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* Primary — rainbow outline (Portrait style, 1 per view) */}
           <a
             href="#catalogo"
-            className="w-full sm:w-auto inline-flex items-center justify-center bg-accent hover:bg-accent-hover text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-all duration-200 active:scale-95 text-base"
+            className="relative inline-flex items-center justify-center font-bold text-sm text-ink px-8 py-3.5 rounded-btn overflow-hidden group"
+            style={{ background: "white" }}
           >
-            Ver Catálogo de Bebidas
+            {/* Rainbow border via pseudo-element */}
+            <span
+              className="absolute inset-0 rounded-btn"
+              style={{
+                background: "linear-gradient(90deg,#26c0ff,#e600c2 20%,#ff4940 40%,#ffa130 60%,#ffc837 80%,#00cc3d)",
+                padding: "1.5px",
+                WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                WebkitMaskComposite: "xor",
+                maskComposite: "exclude",
+              }}
+            />
+            Ver Catálogo
           </a>
+
+          {/* Secondary — filled emerald */}
           <a
-            href="https://wa.me/573019519391?text=Hola%20Bodega%20Dnavits%2C%20deseo%20hacer%20un%20pedido%20a%20domicilio."
+            href={`${waUrl}?text=Hola%20Bodega%20Dnavits%2C%20quiero%20hacer%20un%20pedido.`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald hover:bg-emerald-hover text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-all duration-200 active:scale-95 text-base"
+            className="inline-flex items-center gap-2 bg-emerald hover:bg-emerald-hover text-white font-bold px-8 py-3.5 rounded-btn shadow-portrait transition-all active:scale-95 text-sm"
           >
-            <WhatsAppIcon className="w-5 h-5 text-white" />
-            <span>Pedir por WhatsApp</span>
+            <WhatsAppIcon className="w-4 h-4" />
+            Pedir por WhatsApp
           </a>
         </div>
       </div>

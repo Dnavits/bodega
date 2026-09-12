@@ -2,31 +2,118 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    background-color: #090D14;
-    color: #F8FAFC;
-    font-family: var(--font-roboto), Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+/* ── Portrait Design System — Bodega Dnavits ── */
+
+:root {
+  /* Rainbow gradient — usado máximo 1 vez por vista */
+  --rainbow: linear-gradient(90deg,
+    rgb(38,192,255),
+    rgb(230,0,194)  20%,
+    rgb(255,73,78)  40%,
+    rgb(255,161,62) 60%,
+    rgb(255,200,55) 80%,
+    rgb(0,204,61)
+  );
+
+  /* Sombra multi-capa Portrait */
+  --shadow-portrait: 0 16px 16px -8px rgba(0,0,0,0.03),
+    0 10px 10px -5px rgba(0,0,0,0.03),
+    0 5px 5px -2.5px rgba(0,0,0,0.03),
+    0 3px 3px -1.5px rgba(0,0,0,0.03),
+    0 2px 2px -1px rgba(0,0,0,0.03),
+    0 1px 1px -0.5px rgba(0,0,0,0.03);
 }
 
-/* Custom Scrollbar */
+/* ── Base ── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #ffffff;
+  color: #08304c;
+  font-family: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+/* ── Selección de texto ── */
+::selection {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+}
+
+/* ── Scrollbar personalizado ── */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #090D14;
+  background: #f8fafc;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8;
+}
+
+/* ── Scrollbar oculto (horizontal tabs) ── */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Rainbow text fill ── */
+.text-rainbow {
+  background: var(--rainbow);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Rainbow border (1.5px outline) ── */
+.border-rainbow {
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.border-rainbow::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  background: var(--rainbow);
+  z-index: -1;
+}
+
+/* ── Animaciones ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position: 400px 0; }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.2s ease-out both;
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out both;
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
 }

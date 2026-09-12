@@ -4,79 +4,84 @@ import { useCart } from "@/lib/cart-context";
 import { CloseIcon, TrashIcon, WhatsAppIcon } from "@/components/Icons";
 import Link from "next/link";
 
-export function CartDrawer() {
+interface CartDrawerProps {
+  whatsapp?: string | null;
+}
+
+const FALLBACK_WA = "573019519391";
+
+export function CartDrawer({ whatsapp }: CartDrawerProps) {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, total } = useCart();
 
   if (!isOpen) return null;
 
-  const whatsappMessage = `Hola Bodega Dnavits 🍻, deseo ordenar el siguiente pedido a domicilio:%0A%0A${items
-    .map((i) => `• ${i.cantidad}x ${i.nombre} - $${(i.precio * i.cantidad).toLocaleString("es-CO")}`)
-    .join("%0A")}%0A%0A*Total: $${total.toLocaleString("es-CO")}*%0A%0A¿Me confirman tiempo de entrega en Medellín?`;
-
-  const whatsappLink = `https://wa.me/573019519391?text=${whatsappMessage}`;
+  const wa = whatsapp || FALLBACK_WA;
+  const waMsg = `Hola Bodega Dnavits 🍻, quiero pedir:%0A%0A${items
+    .map(i => `• ${i.cantidad}x ${i.nombre} — $${(i.precio * i.cantidad).toLocaleString("es-CO")}`)
+    .join("%0A")}%0A%0A*Total: $${total.toLocaleString("es-CO")}*`;
+  const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Fondo oscuro con desenfoque */}
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-vault-950/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
         onClick={() => setIsOpen(false)}
       />
 
       {/* Drawer */}
-      <div className="relative w-full max-w-md bg-vault-900 border-l border-vault-800 h-full flex flex-col shadow-2xl z-10 animate-fade-in-up">
-        {/* Cabecera */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-vault-800 bg-vault-900/90">
+      <div className="relative w-full max-w-md bg-canvas border-l border-hairline h-full flex flex-col shadow-card-hover z-10 animate-fade-in-up">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-divider">
           <div className="flex items-center gap-2.5">
-            <h2 className="font-roboto font-black text-lg text-foam">Tu Pedido</h2>
-            <span className="text-xs bg-accent/20 text-accent-light font-bold px-2 py-0.5 rounded-md">
-              {items.length} {items.length === 1 ? "ítem" : "ítems"}
+            <h2 className="font-inter font-black text-lg text-ink">Tu Pedido</h2>
+            <span className="text-[11px] bg-sky text-accent font-bold px-2 py-0.5 rounded-tag">
+              {items.length} ítem{items.length !== 1 ? "s" : ""}
             </span>
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            aria-label="Cerrar carrito"
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-vault-800 hover:bg-vault-700 text-vault-100/70 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-xl border border-hairline text-ink-muted hover:bg-surface transition-colors"
           >
-            <CloseIcon className="w-5 h-5" />
+            <CloseIcon className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Lista de productos */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+        {/* Items */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {items.length === 0 ? (
-            <div className="text-center py-24 text-vault-100/40 flex flex-col items-center">
+            <div className="flex flex-col items-center justify-center py-20 text-center">
               <span className="text-5xl mb-3">🧊</span>
-              <p className="text-sm font-semibold text-foam">Tu carrito está vacío</p>
-              <p className="text-xs text-vault-100/50 mt-1">Agrega gaseosas, cervezas o aguas bien frías.</p>
+              <p className="font-semibold text-ink text-sm">Tu carrito está vacío</p>
+              <p className="text-xs text-ink-faint mt-1">Agrega bebidas desde el catálogo</p>
             </div>
           ) : (
-            items.map((item) => (
+            items.map(item => (
               <div
                 key={item.id}
-                className="flex gap-4 items-center bg-vault-950 border border-vault-800 p-3.5 rounded-2xl"
+                className="flex gap-3 items-center p-3 border border-hairline rounded-card bg-surface"
               >
                 <img
                   src={item.imagen}
                   alt={item.nombre}
-                  className="w-16 h-16 rounded-xl object-contain bg-vault-900 p-1 shrink-0"
+                  className="w-14 h-14 rounded-xl object-contain bg-canvas border border-hairline p-1 shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-bold text-foam truncate">{item.nombre}</p>
-                  <p className="text-xs font-semibold text-accent-light mt-0.5">
+                  <p className="text-xs font-semibold text-ink truncate">{item.nombre}</p>
+                  <p className="text-xs font-bold text-accent mt-0.5">
                     ${(item.precio * item.cantidad).toLocaleString("es-CO")}
                   </p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-1.5">
                     <button
                       onClick={() => updateQuantity(item.id, item.cantidad - 1)}
-                      className="w-6 h-6 flex items-center justify-center bg-vault-800 hover:bg-vault-700 text-foam text-xs font-bold rounded-lg transition-colors"
+                      className="w-6 h-6 flex items-center justify-center bg-canvas border border-hairline rounded-lg text-xs font-bold text-ink hover:bg-surface transition-colors"
                     >
-                      -
+                      −
                     </button>
-                    <span className="text-xs font-bold w-5 text-center text-foam">{item.cantidad}</span>
+                    <span className="text-xs font-bold w-4 text-center text-ink">{item.cantidad}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.cantidad + 1)}
-                      className="w-6 h-6 flex items-center justify-center bg-vault-800 hover:bg-vault-700 text-foam text-xs font-bold rounded-lg transition-colors"
+                      className="w-6 h-6 flex items-center justify-center bg-canvas border border-hairline rounded-lg text-xs font-bold text-ink hover:bg-surface transition-colors"
                     >
                       +
                     </button>
@@ -84,42 +89,39 @@ export function CartDrawer() {
                 </div>
                 <button
                   onClick={() => removeItem(item.id)}
-                  aria-label="Eliminar producto"
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-vault-100/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-faint hover:text-danger hover:bg-danger-soft transition-colors"
                 >
-                  <TrashIcon className="w-4 h-4" />
+                  <TrashIcon className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))
           )}
         </div>
 
-        {/* Footer del Carrito */}
+        {/* Footer */}
         {items.length > 0 && (
-          <div className="p-6 border-t border-vault-800 bg-vault-950/80 space-y-3">
-            <div className="flex justify-between items-baseline mb-3">
-              <span className="text-xs uppercase font-bold text-vault-100/60">Subtotal</span>
-              <span className="font-roboto font-black text-2xl text-foam">
+          <div className="px-6 py-5 border-t border-divider space-y-2.5">
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs uppercase tracking-eyebrow text-ink-muted font-bold">Subtotal</span>
+              <span className="font-inter font-black text-2xl text-ink">
                 ${total.toLocaleString("es-CO")}
               </span>
             </div>
-
             <Link
               href="/checkout"
               onClick={() => setIsOpen(false)}
-              className="block w-full text-center bg-accent hover:bg-accent-hover text-white font-bold py-3.5 rounded-xl shadow-md transition-all duration-200 active:scale-95 text-sm"
+              className="block w-full text-center bg-ink hover:bg-ink-light text-white font-bold py-3 rounded-btn shadow-portrait transition-all active:scale-95 text-sm"
             >
-              Proceder al Checkout (Web)
+              Checkout (guardar pedido)
             </Link>
-
             <a
-              href={whatsappLink}
+              href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full text-center bg-emerald hover:bg-emerald-hover text-white font-bold py-3.5 rounded-xl shadow-md transition-all duration-200 active:scale-95 text-sm"
+              className="flex items-center justify-center gap-2 w-full bg-emerald hover:bg-emerald-hover text-white font-bold py-3 rounded-btn shadow-portrait transition-all active:scale-95 text-sm"
             >
-              <WhatsAppIcon className="w-4 h-4 text-white" />
-              <span>Pedir directo por WhatsApp</span>
+              <WhatsAppIcon className="w-4 h-4" />
+              Solo WhatsApp (rápido)
             </a>
           </div>
         )}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PlusIcon, TrashIcon, BeerIcon } from "@/components/Icons";
+import { CATEGORIAS_PRODUCTOS, CATEGORIA_LABELS } from "@/lib/constants";
 
 type Producto = {
   id: string;
@@ -16,15 +17,13 @@ type Producto = {
   activo: boolean;
 };
 
-const CATEGORIAS = ["Gaseosas", "Cervezas", "Aguas", "Licores", "Otros"];
-
 const formVacio = {
   nombre: "",
   descripcion: "",
   precio: "",
   precio_comparacion: "",
   stock: "",
-  categoria: "Gaseosas",
+  categoria: "gaseosas",
   imagen_url: "",
   activo: true,
 };
@@ -37,7 +36,7 @@ export default function AdminProductos() {
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [filtroCategoria, setFiltroCategoria] = useState("Todas");
+  const [filtroCategoria, setFiltroCategoria] = useState("todas");
 
   async function cargar() {
     const { data } = await supabase
@@ -57,39 +56,68 @@ export default function AdminProductos() {
     setMensaje("");
 
     if (!form.nombre.trim() || !form.precio || form.stock === "") {
-      setError("Completa nombre, precio y cantidad en stock.");
+      setError("Completa el nombre, precio y cantidad en stock.");
       return;
     }
 
     setCargando(true);
 
-    const payload = {
+    const payload: any = {
       nombre: form.nombre.trim(),
       descripcion: form.descripcion.trim() || null,
       precio: parseInt(form.precio, 10),
       precio_comparacion: form.precio_comparacion ? parseInt(form.precio_comparacion, 10) : null,
       stock: parseInt(form.stock, 10),
-      categoria: form.categoria,
+      categoria: form.categoria.toLowerCase(),
       imagenes: form.imagen_url.trim() ? [form.imagen_url.trim()] : [],
       activo: form.activo,
     };
 
     try {
       if (editandoId) {
-        const { error: updateError } = await supabase
+        let { error: updateError } = await supabase
           .from("productos")
           .update(payload)
           .eq("id", editandoId);
 
-        if (updateError) throw updateError;
-        setMensaje("✓ Producto actualizado con éxito. Ya es visible en la tienda.");
+        // Fallback si la columna 'descripcion' o 'precio_comparacion' aún no existe en el schema de Supabase
+        if (updateError && updateError.message.includes("schema cache")) {
+          const fallbackPayload = { ...payload };
+          delete fallbackPayload.descripcion;
+          delete fallbackPayload.precio_comparacion;
+          const { error: retryError } = await supabase
+            .from("productos")
+            .update(fallbackPayload)
+            .eq("id", editandoId);
+
+          if (retryError) throw retryError;
+          setMensaje("✓ Producto actualizado (Nota: para guardar descripción, ejecuta el SQL de actualización de columnas en Supabase).");
+        } else if (updateError) {
+          throw updateError;
+        } else {
+          setMensaje("✓ Producto actualizado con éxito. Ya es visible en la tienda.");
+        }
       } else {
-        const { error: insertError } = await supabase
+        let { error: insertError } = await supabase
           .from("productos")
           .insert([payload]);
 
-        if (insertError) throw insertError;
-        setMensaje("✓ Producto creado y publicado con éxito en la tienda.");
+        // Fallback si la columna 'descripcion' o 'precio_comparacion' aún no existe en el schema de Supabase
+        if (insertError && insertError.message.includes("schema cache")) {
+          const fallbackPayload = { ...payload };
+          delete fallbackPayload.descripcion;
+          delete fallbackPayload.precio_comparacion;
+          const { error: retryError } = await supabase
+            .from("productos")
+            .insert([fallbackPayload]);
+
+          if (retryError) throw retryError;
+          setMensaje("✓ Producto creado con éxito (Nota: para guardar descripción, ejecuta el SQL de actualización de columnas en Supabase).");
+        } else if (insertError) {
+          throw insertError;
+        } else {
+          setMensaje("✓ Producto creado y publicado con éxito en la tienda.");
+        }
       }
 
       setForm(formVacio);
@@ -125,7 +153,7 @@ export default function AdminProductos() {
       precio: p.precio.toString(),
       precio_comparacion: p.precio_comparacion ? p.precio_comparacion.toString() : "",
       stock: p.stock.toString(),
-      categoria: p.categoria,
+      categoria: p.categoria?.toLowerCase() || "gaseosas",
       imagen_url: p.imagenes?.[0] || "",
       activo: p.activo ?? true,
     });
@@ -133,34 +161,32 @@ export default function AdminProductos() {
   }
 
   const productosFiltrados = productos.filter((p) =>
-    filtroCategoria === "Todas" ? true : p.categoria === filtroCategoria
+    filtroCategoria === "todas" ? true : (p.categoria || "").toLowerCase() === filtroCategoria.toLowerCase()
   );
 
   return (
     <div className="space-y-10">
       {/* Título y Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-accent-light">
-            Inventario & Catálogo
-          </span>
-          <h1 className="font-roboto font-black text-2xl sm:text-3xl text-foam mt-1">
-            Gestión de Bebidas y Stock
-          </h1>
-          <p className="text-xs text-vault-100/60 mt-1">
-            Cualquier cambio de precio, stock o fotos que hagas aquí se actualiza de inmediato en la tienda pública.
-          </p>
-        </div>
+      <div>
+        <span className="text-xs font-bold uppercase tracking-eyebrow text-accent">
+          Inventario &amp; Catálogo
+        </span>
+        <h1 className="font-inter font-black text-2xl sm:text-3xl text-ink mt-1">
+          Gestión de Bebidas y Stock
+        </h1>
+        <p className="text-xs text-ink-muted mt-1">
+          Cualquier cambio de precio, stock o fotos que hagas aquí se actualiza de inmediato en la tienda pública.
+        </p>
       </div>
 
-      {/* Formulario Shopify-style para Crear / Editar Producto */}
+      {/* Formulario para Crear / Editar Producto */}
       <form
         onSubmit={guardarProducto}
-        className="bg-vault-900 border border-vault-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6"
+        className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-6"
       >
-        <div className="flex items-center justify-between border-b border-vault-800 pb-4">
-          <h2 className="font-roboto font-bold text-lg text-foam flex items-center gap-2">
-            <PlusIcon className="w-5 h-5 text-accent-light" />
+        <div className="flex items-center justify-between border-b border-divider pb-4">
+          <h2 className="font-inter font-bold text-base text-ink flex items-center gap-2">
+            <PlusIcon className="w-4 h-4 text-accent" />
             <span>{editandoId ? "Editar Producto Seleccionado" : "Agregar Nueva Bebida / Producto"}</span>
           </h2>
           {editandoId && (
@@ -170,7 +196,7 @@ export default function AdminProductos() {
                 setEditandoId(null);
                 setForm(formVacio);
               }}
-              className="text-xs text-vault-100/60 hover:text-foam underline"
+              className="text-xs text-ink-muted hover:text-ink underline"
             >
               Cancelar Edición
             </button>
@@ -180,7 +206,7 @@ export default function AdminProductos() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Nombre */}
           <div className="md:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Nombre de la Bebida *
             </label>
             <input
@@ -188,23 +214,23 @@ export default function AdminProductos() {
               placeholder="Ej: Cerveza Corona Extra 355ml (Botella)"
               value={form.nombre}
               onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
             />
           </div>
 
           {/* Categoría */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Categoría *
             </label>
             <select
               value={form.categoria}
               onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam outline-none transition-colors"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none transition-colors"
             >
-              {CATEGORIAS.map((c) => (
-                <option key={c} value={c} className="bg-vault-950 text-foam">
-                  {c}
+              {CATEGORIAS_PRODUCTOS.map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORIA_LABELS[c]}
                 </option>
               ))}
             </select>
@@ -212,7 +238,7 @@ export default function AdminProductos() {
 
           {/* URL de la Imagen */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               URL de la Fotografía (Unsplash o enlace directo)
             </label>
             <input
@@ -220,13 +246,13 @@ export default function AdminProductos() {
               placeholder="https://images.unsplash.com/..."
               value={form.imagen_url}
               onChange={(e) => setForm({ ...form, imagen_url: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
             />
           </div>
 
           {/* Precio */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Precio de Venta ($ COP) *
             </label>
             <input
@@ -234,13 +260,13 @@ export default function AdminProductos() {
               placeholder="Ej: 8500"
               value={form.precio}
               onChange={(e) => setForm({ ...form, precio: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
             />
           </div>
 
           {/* Precio de Comparación */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Precio Antes (Tachado en tienda)
             </label>
             <input
@@ -248,13 +274,13 @@ export default function AdminProductos() {
               placeholder="Ej: 10000"
               value={form.precio_comparacion}
               onChange={(e) => setForm({ ...form, precio_comparacion: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
             />
           </div>
 
           {/* Stock */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Unidades en Inventario (Stock) *
             </label>
             <input
@@ -262,7 +288,7 @@ export default function AdminProductos() {
               placeholder="Ej: 48"
               value={form.stock}
               onChange={(e) => setForm({ ...form, stock: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-3 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors"
             />
           </div>
 
@@ -273,16 +299,16 @@ export default function AdminProductos() {
               id="activo"
               checked={form.activo}
               onChange={(e) => setForm({ ...form, activo: e.target.checked })}
-              className="w-5 h-5 rounded bg-vault-950 border-vault-800 text-accent focus:ring-accent"
+              className="w-4 h-4 rounded border-hairline text-accent focus:ring-accent"
             />
-            <label htmlFor="activo" className="text-xs font-semibold text-foam">
+            <label htmlFor="activo" className="text-xs font-semibold text-ink">
               Publicado en tienda (Visible para los clientes)
             </label>
           </div>
 
           {/* Descripción */}
           <div className="md:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-vault-100/70 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
               Descripción Breve
             </label>
             <textarea
@@ -290,19 +316,19 @@ export default function AdminProductos() {
               placeholder="Presentación retornable o no retornable, grado de alcohol, temperatura de entrega..."
               value={form.descripcion}
               onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-              className="w-full bg-vault-950 border border-vault-800 focus:border-accent rounded-xl px-4 py-2.5 text-sm text-foam placeholder-vault-100/30 outline-none transition-colors resize-none"
+              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none transition-colors resize-none"
             />
           </div>
         </div>
 
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-medium">
+          <div className="p-3 bg-danger-soft border border-danger/20 rounded-card text-danger text-xs font-medium">
             {error}
           </div>
         )}
 
         {mensaje && (
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-medium">
+          <div className="p-3 bg-emerald-soft border border-emerald/20 rounded-card text-emerald text-xs font-medium">
             {mensaje}
           </div>
         )}
@@ -310,92 +336,94 @@ export default function AdminProductos() {
         <button
           type="submit"
           disabled={cargando}
-          className="w-full sm:w-auto px-8 py-3.5 bg-accent hover:bg-accent-hover text-white font-bold rounded-xl text-sm transition-all active:scale-95 disabled:opacity-60 shadow-lg"
+          className="w-full sm:w-auto px-8 py-3 bg-ink hover:bg-ink-light text-white font-bold rounded-btn text-sm shadow-portrait transition-all active:scale-95 disabled:opacity-60"
         >
           {cargando ? "Guardando..." : editandoId ? "Actualizar Producto" : "Guardar y Publicar en Tienda"}
         </button>
       </form>
 
       {/* Tabla de Productos Existentes */}
-      <div className="bg-vault-900 border border-vault-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+      <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="font-roboto font-bold text-lg text-foam">
+            <h2 className="font-inter font-bold text-base text-ink">
               Productos en Inventario ({productosFiltrados.length})
             </h2>
-            <p className="text-xs text-vault-100/50">
+            <p className="text-xs text-ink-muted">
               Control total de precios, disponibilidad y stock en tiempo real.
             </p>
           </div>
 
           {/* Filtro por Categoría */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-vault-100/50">Categoría:</span>
+            <span className="text-xs text-ink-muted">Categoría:</span>
             <select
               value={filtroCategoria}
               onChange={(e) => setFiltroCategoria(e.target.value)}
-              className="bg-vault-950 border border-vault-800 rounded-xl px-3 py-1.5 text-xs text-foam outline-none"
+              className="bg-canvas border border-hairline rounded-btn px-3 py-1.5 text-xs text-ink outline-none"
             >
-              <option value="Todas">Todas</option>
-              {CATEGORIAS.map((c) => (
-                <option key={c} value={c}>{c}</option>
+              <option value="todas">Todas</option>
+              {CATEGORIAS_PRODUCTOS.map((c) => (
+                <option key={c} value={c}>{CATEGORIA_LABELS[c]}</option>
               ))}
             </select>
           </div>
         </div>
 
         {productosFiltrados.length === 0 ? (
-          <div className="text-center py-16 text-vault-100/40 text-xs">
+          <div className="text-center py-16 text-ink-faint text-xs">
             No hay productos registrados en esta categoría.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-vault-800 text-vault-100/50 uppercase tracking-wider">
-                  <th className="pb-3">Producto</th>
-                  <th className="pb-3">Categoría</th>
-                  <th className="pb-3">Precio</th>
-                  <th className="pb-3">Stock</th>
-                  <th className="pb-3">Estado</th>
-                  <th className="pb-3 text-right">Acciones</th>
+                <tr className="border-b border-divider text-ink-faint uppercase tracking-eyebrow">
+                  <th className="pb-3 font-semibold">Producto</th>
+                  <th className="pb-3 font-semibold">Categoría</th>
+                  <th className="pb-3 font-semibold">Precio</th>
+                  <th className="pb-3 font-semibold">Stock</th>
+                  <th className="pb-3 font-semibold">Estado</th>
+                  <th className="pb-3 font-semibold text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-vault-800/60">
+              <tbody className="divide-y divide-divider">
                 {productosFiltrados.map((p) => (
-                  <tr key={p.id} className="hover:bg-vault-850/40 transition-colors">
-                    <td className="py-3.5 font-bold text-foam flex items-center gap-3">
+                  <tr key={p.id} className="hover:bg-surface transition-colors">
+                    <td className="py-3.5 font-bold text-ink flex items-center gap-3">
                       {p.imagenes?.[0] ? (
                         <img
                           src={p.imagenes[0]}
                           alt={p.nombre}
-                          className="w-9 h-9 rounded-lg object-contain bg-vault-950 border border-vault-800 p-0.5"
+                          className="w-9 h-9 rounded-lg object-contain bg-surface border border-hairline p-0.5"
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-lg bg-vault-950 border border-vault-800 flex items-center justify-center text-vault-100/40">
+                        <div className="w-9 h-9 rounded-lg bg-surface border border-hairline flex items-center justify-center text-ink-faint">
                           <BeerIcon className="w-4 h-4" />
                         </div>
                       )}
                       <span>{p.nombre}</span>
                     </td>
-                    <td className="py-3.5 text-vault-100/70">{p.categoria}</td>
-                    <td className="py-3.5 font-roboto font-bold text-accent-light">
+                    <td className="py-3.5 text-ink-muted capitalize">
+                      {CATEGORIA_LABELS[(p.categoria || "").toLowerCase() as keyof typeof CATEGORIA_LABELS] || p.categoria}
+                    </td>
+                    <td className="py-3.5 font-inter font-bold text-accent">
                       ${p.precio.toLocaleString("es-CO")}
                     </td>
                     <td className="py-3.5">
-                      <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+                      <span className={`px-2 py-0.5 rounded-tag font-bold text-[10px] uppercase tracking-eyebrow ${
                         p.stock <= 5
-                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                          ? "bg-danger-soft text-danger border border-danger/20"
                           : p.stock <= 15
-                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                          : "bg-emerald/20 text-emerald-light border border-emerald/30"
+                          ? "bg-warning-soft text-warning border border-warning/20"
+                          : "bg-emerald-soft text-emerald border border-emerald/20"
                       }`}>
-                        {p.stock} unidades
+                        {p.stock} un.
                       </span>
                     </td>
                     <td className="py-3.5">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                        p.activo ? "bg-emerald/10 text-emerald-light" : "bg-vault-800 text-vault-100/40"
+                      <span className={`px-2 py-0.5 rounded-tag text-[10px] font-bold uppercase tracking-eyebrow ${
+                        p.activo ? "bg-emerald-soft text-emerald" : "bg-surface text-ink-faint border border-hairline"
                       }`}>
                         {p.activo ? "Activo" : "Oculto"}
                       </span>
@@ -403,13 +431,13 @@ export default function AdminProductos() {
                     <td className="py-3.5 text-right space-x-2">
                       <button
                         onClick={() => comenzarEdicion(p)}
-                        className="px-3 py-1.5 bg-vault-850 hover:bg-vault-800 text-foam font-bold rounded-lg border border-vault-700 transition-colors"
+                        className="px-3 py-1.5 bg-canvas hover:bg-surface text-ink font-semibold rounded-btn border border-hairline shadow-subtle transition-all"
                       >
                         Editar
                       </button>
                       <button
                         onClick={() => eliminarProducto(p.id, p.nombre)}
-                        className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg border border-red-500/30 transition-colors"
+                        className="px-3 py-1.5 bg-danger-soft hover:bg-danger/20 text-danger font-semibold rounded-btn border border-danger/20 transition-colors"
                       >
                         Eliminar
                       </button>

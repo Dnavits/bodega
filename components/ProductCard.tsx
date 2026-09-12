@@ -3,124 +3,121 @@
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { PlusIcon } from "@/components/Icons";
+import { CATEGORIA_LABELS } from "@/lib/constants";
 
 export type ProductoBodega = {
-  id: string;
-  nombre: string;
-  descripcion?: string;
-  precio: number;
+  id:                string;
+  nombre:            string;
+  descripcion?:      string;
+  precio:            number;
   precio_comparacion?: number;
-  imagenes: string[];
-  categoria: string;
-  stock: number;
-  activo?: boolean;
+  imagenes:          string[];
+  categoria:         string;
+  stock:             number;
+  activo?:           boolean;
 };
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80";
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80";
+
+function StockBadge({ stock }: { stock: number }) {
+  if (stock <= 0) return (
+    <span className="bg-danger-soft text-danger text-[10px] font-bold uppercase tracking-eyebrow px-2 py-0.5 rounded-tag">
+      Agotado
+    </span>
+  );
+  if (stock <= 10) return (
+    <span className="bg-warning-soft text-warning text-[10px] font-bold uppercase tracking-eyebrow px-2 py-0.5 rounded-tag">
+      ¡Últimas {stock}!
+    </span>
+  );
+  return (
+    <span className="bg-mint text-emerald text-[10px] font-bold uppercase tracking-eyebrow px-2 py-0.5 rounded-tag">
+      Disponible
+    </span>
+  );
+}
 
 export function ProductCard({ producto }: { producto: ProductoBodega }) {
   const { addItem } = useCart();
   const [imgSrc, setImgSrc] = useState(producto.imagenes?.[0] || DEFAULT_IMAGE);
-  const [agregadoAnim, setAgregadoAnim] = useState(false);
+  const [added, setAdded]   = useState(false);
 
   const agotado = (producto.stock ?? 0) <= 0;
 
-  function handleAgregar() {
+  const catLabel =
+    CATEGORIA_LABELS[producto.categoria.toLowerCase() as keyof typeof CATEGORIA_LABELS] ||
+    producto.categoria;
+
+  function handleAdd() {
     if (agotado) return;
-    addItem({
-      id: producto.id,
-      nombre: producto.nombre,
-      precio: producto.precio,
-      imagen: imgSrc,
-    });
-    setAgregadoAnim(true);
-    setTimeout(() => setAgregadoAnim(false), 1200);
+    addItem({ id: producto.id, nombre: producto.nombre, precio: producto.precio, imagen: imgSrc });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1200);
   }
 
   return (
-    <div className="group relative bg-vault-900 border border-vault-800 hover:border-accent/40 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
-      {/* Imagen del Producto */}
-      <div className="relative aspect-square w-full bg-vault-950 overflow-hidden flex items-center justify-center p-4">
+    <article className="group bg-canvas rounded-card border border-hairline shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden">
+      {/* Image */}
+      <div className="relative aspect-square bg-surface overflow-hidden flex items-center justify-center p-4">
         <img
           src={imgSrc}
           alt={producto.nombre}
           onError={() => setImgSrc(DEFAULT_IMAGE)}
           className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
         />
-
-        {/* Categoría Badge */}
+        {/* Category */}
         <div className="absolute top-3 left-3">
-          <span className="bg-vault-950/90 backdrop-blur-md text-vault-100/70 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border border-vault-800">
-            {producto.categoria}
+          <span className="bg-canvas/90 backdrop-blur-sm text-ink-muted text-[10px] font-semibold uppercase tracking-eyebrow px-2 py-0.5 rounded-tag border border-hairline">
+            {catLabel}
           </span>
         </div>
-
-        {/* Stock / Agotado */}
+        {/* Stock */}
         <div className="absolute top-3 right-3">
-          {agotado ? (
-            <span className="bg-red-500/20 text-red-400 border border-red-500/40 text-[10px] font-bold px-2 py-0.5 rounded-md">
-              Agotado
-            </span>
-          ) : (
-            <span className="bg-emerald/10 text-emerald-light border border-emerald/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
-              {producto.stock} en stock
-            </span>
-          )}
+          <StockBadge stock={producto.stock} />
         </div>
       </div>
 
-      {/* Cuerpo de la Tarjeta */}
-      <div className="p-5 flex flex-col flex-1 justify-between bg-vault-900">
+      {/* Body */}
+      <div className="p-4 flex flex-col flex-1 justify-between">
         <div>
-          <h3 className="font-roboto font-bold text-base text-foam group-hover:text-accent-light transition-colors line-clamp-1">
+          <h3 className="font-inter font-semibold text-sm text-ink group-hover:text-accent transition-colors line-clamp-1">
             {producto.nombre}
           </h3>
           {producto.descripcion && (
-            <p className="mt-1 text-xs text-vault-100/60 line-clamp-2 leading-relaxed">
+            <p className="mt-0.5 text-xs text-ink-faint line-clamp-2 leading-relaxed">
               {producto.descripcion}
             </p>
           )}
         </div>
 
-        {/* Precios y Botón de Agregar */}
-        <div className="mt-5 pt-4 border-t border-vault-800 flex items-center justify-between gap-3">
+        {/* Price + CTA */}
+        <div className="mt-4 pt-3 border-t border-divider flex items-center justify-between gap-2">
           <div>
-            <span className="text-[10px] uppercase tracking-wider text-vault-100/50 block font-semibold">
-              Precio Unitario
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-roboto font-black text-lg text-foam">
-                ${producto.precio.toLocaleString("es-CO")}
-              </span>
-              {producto.precio_comparacion && producto.precio_comparacion > producto.precio && (
-                <span className="text-xs text-vault-100/40 line-through">
-                  ${producto.precio_comparacion.toLocaleString("es-CO")}
-                </span>
-              )}
-            </div>
+            <p className="font-inter font-black text-base text-ink leading-none">
+              ${producto.precio.toLocaleString("es-CO")}
+            </p>
+            {producto.precio_comparacion && producto.precio_comparacion > producto.precio && (
+              <p className="text-xs text-ink-faint line-through mt-0.5">
+                ${producto.precio_comparacion.toLocaleString("es-CO")}
+              </p>
+            )}
           </div>
 
           <button
             type="button"
+            onClick={handleAdd}
             disabled={agotado}
-            onClick={handleAgregar}
-            className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-              agregadoAnim
+            className={`inline-flex items-center gap-1 px-4 py-2 rounded-btn text-xs font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
+              added
                 ? "bg-emerald text-white"
-                : "bg-accent hover:bg-accent-hover text-white shadow-md"
+                : "bg-ink hover:bg-ink-light text-white"
             }`}
           >
-            {agregadoAnim ? (
-              <span>¡Agregado!</span>
-            ) : (
-              <>
-                <PlusIcon className="w-3.5 h-3.5" />
-                <span>Agregar</span>
-              </>
-            )}
+            {added ? "¡Listo!" : <><PlusIcon className="w-3 h-3" /> Agregar</>}
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

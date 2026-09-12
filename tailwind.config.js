@@ -8,41 +8,74 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        vault: {
-          950: "#080B10",
-          900: "#0D131F",
-          850: "#131C2D",
-          800: "#1E293B",
-          700: "#334155",
-          600: "#475569",
-          100: "#F1F5F9",
-          50: "#F8FAFC"
+        // Portrait Ink — deep navy primary text and structural lines
+        ink: {
+          DEFAULT: "#08304c",
+          light:   "#1e4d6d",
+          muted:   "#475569",
+          faint:   "#94a3b8",
         },
-        // Reemplazo del naranja por azul zafiro / cobalto tecnológico y elegante
+        // Canvas / surfaces
+        canvas:  "#ffffff",
+        surface: "#f8fafc",
+        // Card borders
+        hairline: "rgba(0,0,0,0.07)",
+        divider:  "#e2e8f0",
+        ash:      "#dedede",
+        // Accent — sapphire blue
         accent: {
-          DEFAULT: "#2563EB", // Azul eléctrico / zafiro elegante
-          hover: "#1D4ED8",
-          light: "#38BDF8",   // Azul cielo suave
-          glow: "#60A5FA",
-          soft: "#EFF6FF"
+          DEFAULT: "#2563EB",
+          hover:   "#1D4ED8",
+          light:   "#60A5FA",
+          soft:    "#EFF6FF",
         },
+        // Emerald — WhatsApp / success
         emerald: {
           DEFAULT: "#059669",
-          hover: "#047857",
-          light: "#10B981",
-          soft: "#D1FAE5"
+          hover:   "#047857",
+          light:   "#10B981",
+          soft:    "#D1FAE5",
         },
-        foam: "#F8FAFC"
+        // Pastel washes (Portrait)
+        mint:  "#d7ffe2",
+        sky:   "#e8f1ff",
+        peach: "#ffebd6",
+        // Status
+        danger: {
+          DEFAULT: "#DC2626",
+          soft:    "#FEE2E2",
+        },
+        warning: {
+          DEFAULT: "#D97706",
+          soft:    "#FEF3C7",
+        },
       },
       fontFamily: {
-        sans: ["var(--font-roboto)", "Roboto", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        roboto: ["var(--font-roboto)", "Roboto", "sans-serif"]
+        sans:  ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        inter: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      borderRadius: {
+        pill:  "9999px",
+        nav:   "28px",
+        card:  "24px",
+        btn:   "28px",
+        input: "16px",
+        tag:   "9999px",
+      },
+      letterSpacing: {
+        display: "-0.04em",
+        heading: "-0.03em",
+        tight:   "-0.02em",
+        eyebrow: "0.14em",
       },
       boxShadow: {
-        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-        'card': '0 4px 20px -2px rgba(15, 23, 42, 0.08)',
-        'card-hover': '0 20px 30px -4px rgba(15, 23, 42, 0.15)'
-      }
+        // Portrait multi-layer shadow system — max 8% opacity
+        portrait:   "0 16px 16px -8px rgba(0,0,0,0.03), 0 10px 10px -5px rgba(0,0,0,0.03), 0 5px 5px -2.5px rgba(0,0,0,0.03), 0 3px 3px -1.5px rgba(0,0,0,0.03), 0 2px 2px -1px rgba(0,0,0,0.03), 0 1px 1px -0.5px rgba(0,0,0,0.03)",
+        nav:        "0 0 0 1px rgba(0,0,0,0.06), 0 16px 16px -8px rgba(0,0,0,0.03), 0 8px 8px -4px rgba(0,0,0,0.03), 0 4px 4px -2px rgba(0,0,0,0.03)",
+        card:       "0 0 0 1px rgba(0,0,0,0.06), 0 16px 16px -8px rgba(0,0,0,0.03), 0 8px 8px -4px rgba(0,0,0,0.03), 0 4px 4px -2px rgba(0,0,0,0.02)",
+        "card-hover":"0 0 0 1px rgba(0,0,0,0.08), 0 20px 20px -10px rgba(0,0,0,0.07), 0 10px 10px -5px rgba(0,0,0,0.04), 0 5px 5px -2.5px rgba(0,0,0,0.03)",
+        subtle:     "0 0 0 1px rgba(0,0,0,0.06)",
+      },
     }
   },
   plugins: []

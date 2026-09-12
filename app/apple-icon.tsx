@@ -14,15 +14,15 @@ export default function AppleIcon() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #7E22CE 0%, #17141D 100%)',
+          background: '#08304c',
           borderRadius: '40px',
-          border: '4px solid #D8B4FE',
-          color: '#FAF5FF',
+          border: '4px solid #2563eb',
+          color: '#ffffff',
           fontFamily: 'sans-serif'
         }}
       >
-        <span style={{ fontSize: 72, fontWeight: 900, letterSpacing: -2 }}>MA</span>
-        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 6, marginTop: 4, color: '#D8B4FE' }}>ATELIER</span>
+        <span style={{ fontSize: 72, fontWeight: 900, letterSpacing: -2 }}>BD</span>
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 4, marginTop: 4, color: '#60a5fa' }}>BODEGA DNAVITS</span>
       </div>
     ),
     { ...size }

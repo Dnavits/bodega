@@ -13,16 +13,16 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #7E22CE 0%, #17141D 100%)',
-          borderRadius: '50%',
-          border: '1.5px solid #D8B4FE',
-          color: '#FAF5FF',
-          fontSize: 16,
+          background: '#08304c',
+          borderRadius: '8px',
+          border: '1.5px solid #2563eb',
+          color: '#ffffff',
+          fontSize: 14,
           fontWeight: 900,
           fontFamily: 'sans-serif'
         }}
       >
-        M
+        BD
       </div>
     ),
     { ...size }

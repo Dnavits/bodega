@@ -1,27 +1,34 @@
+import { getSiteConfig } from "@/lib/site-config";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { Tienda } from "@/components/Tienda";
 import { CartDrawer } from "@/components/CartDrawer";
 import { BodegaFooter } from "@/components/BodegaFooter";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
-import { getSiteConfig } from "@/lib/site-config";
 
-// Forzar dinamismo para reflejar en tiempo real la configuración y productos
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const { logoUrl } = await getSiteConfig();
+export default async function HomePage() {
+  const config = await getSiteConfig();
 
   return (
-    <div className="relative min-h-screen bg-vault-950 text-foam flex flex-col selection:bg-amber/30 selection:text-amber-light">
-      <Navbar logoUrl={logoUrl} />
-      <main className="flex-1">
-        <Hero />
+    <>
+      <Navbar
+        logoUrl={config.logo_url}
+        bannerAnuncio={config.banner_anuncio}
+        whatsappPedidos={config.whatsapp_pedidos}
+      />
+      <main className="pt-28">
+        <Hero whatsappPedidos={config.whatsapp_pedidos} />
         <Tienda />
       </main>
-      <BodegaFooter />
-      <CartDrawer />
-      <FloatingWhatsApp />
-    </div>
+      <BodegaFooter
+        whatsapp={config.whatsapp_pedidos}
+        telefono={config.telefono_contacto}
+        direccion={config.direccion_bodega}
+      />
+      <CartDrawer whatsapp={config.whatsapp_pedidos} />
+      <FloatingWhatsApp whatsapp={config.whatsapp_pedidos} />
+    </>
   );
 }
