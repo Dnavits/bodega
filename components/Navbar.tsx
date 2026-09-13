@@ -200,37 +200,61 @@ export function Navbar({ nombreBodega, subtituloBodega, logoUrl, bannerAnuncio, 
 
                 {/* Dropdown */}
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-60 bg-canvas border border-hairline rounded-card shadow-card p-2 z-50 animate-fade-in-up">
-                    {/* User info */}
-                    <div className="px-3 py-2.5 border-b border-divider mb-2">
-                      <p className="font-semibold text-sm text-ink truncate">{displayName}</p>
-                      <p className="text-[11px] text-ink-faint truncate mt-0.5">{user.email}</p>
-                      {isAdmin && (
-                        <span className="inline-flex items-center gap-1.5 mt-1.5 bg-sky text-accent font-bold text-[10px] uppercase tracking-eyebrow px-2 py-0.5 rounded-tag">
-                          <ShieldAdminIcon className="w-3 h-3 text-accent" />
-                          <span>Administrador Autorizado</span>
-                        </span>
-                      )}
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-canvas border border-hairline rounded-card shadow-card p-2.5 z-50 animate-fade-in-up space-y-1.5">
+                    {/* User info card */}
+                    <div className="p-3 bg-surface/70 rounded-xl border border-hairline/60">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center font-bold text-xs uppercase shadow-subtle shrink-0">
+                          {displayName[0] || "U"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <p className="font-bold text-xs text-ink truncate">{displayName}</p>
+                            {isAdmin && (
+                              <span className="inline-flex items-center gap-1 bg-sky text-accent text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-tag shrink-0">
+                                <ShieldAdminIcon className="w-2.5 h-2.5" />
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-ink-muted truncate mt-0.5">{user.email}</p>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Botón de Dashboard para Administradores justo arriba de Cerrar Sesión */}
+                    {/* Botón de Panel para Administradores */}
                     {isAdmin && (
                       <Link
                         href="/admin"
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center justify-center gap-2 w-full py-2.5 px-3 mb-2 rounded-btn bg-ink hover:bg-ink-light text-white text-xs font-bold shadow-portrait transition-all active:scale-95"
+                        className="flex items-center justify-between w-full p-2.5 rounded-xl bg-canvas hover:bg-surface border border-hairline text-ink transition-all group shadow-subtle"
                       >
-                        <ShieldAdminIcon className="w-4 h-4 text-accent-light" />
-                        <span>Dashboard / Panel Admin</span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-sky text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-white transition-colors">
+                            <ShieldAdminIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="text-left min-w-0">
+                            <p className="text-xs font-bold text-ink group-hover:text-accent transition-colors truncate">
+                              Panel de Control
+                            </p>
+                            <p className="text-[10px] text-ink-muted truncate">
+                              Inventario, pedidos y ajustes
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-ink-faint group-hover:text-accent group-hover:translate-x-0.5 transition-all text-xs font-bold ml-1">
+                          →
+                        </span>
                       </Link>
                     )}
 
+                    {/* Cerrar Sesión */}
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-danger hover:bg-danger-soft transition-colors"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-ink-muted hover:text-danger hover:bg-danger-soft transition-colors"
                     >
-                      <LogOutIcon className="w-4 h-4" />
+                      <LogOutIcon className="w-3.5 h-3.5 text-danger/80" />
                       <span>Cerrar Sesión</span>
                     </button>
                   </div>
