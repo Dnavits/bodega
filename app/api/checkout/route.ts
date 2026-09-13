@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Faltan datos de contacto o dirección." }, { status: 400 });
   }
 
-  // Filtrar items reales para validar precios en base de datos
+  // Filtrar items reales para validar precios y stock en base de datos
   const realIds = items
     .map((i: { id: string }) => i.id)
     .filter((id: string) => !id.startsWith("sample-"));
@@ -29,9 +29,27 @@ export async function POST(request: Request) {
   if (realIds.length > 0) {
     const { data } = await supabase
       .from("productos")
-      .select("id, precio, stock, activo")
+      .select("id, nombre, precio, stock, activo")
       .in("id", realIds);
     productosReales = data || [];
+  }
+
+  // Validar stock antes de procesar el pedido
+  for (const item of items) {
+    if (item.id.startsWith("sample-")) continue;
+    const real = productosReales.find((p) => p.id === item.id);
+    if (!real) {
+      return NextResponse.json(
+        { error: `El producto "${item.nombre || item.id}" no existe en el catálogo.` },
+        { status: 400 }
+      );
+    }
+    if (real.stock !== undefined && real.stock !== null && real.stock < item.cantidad) {
+      return NextResponse.json(
+        { error: `No hay suficiente stock de "${real.nombre || item.nombre}". Disponible: ${real.stock} unidades.` },
+        { status: 400 }
+      );
+    }
   }
 
   let total = 0;
@@ -101,11 +119,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // Insertar los items asociados si hay productos reales en base de datos
+  // Insertar los items asociados y descontar stock si hay productos reales en base de datos
   if (itemsValidados.length > 0) {
     await supabase
       .from("pedido_items")
       .insert(itemsValidados.map((i) => ({ ...i, pedido_id: pedido.id })));
+
+    // Descontar stock de cada producto en la base de datos de forma segura
+    for (const item of itemsValidados) {
+      const real = productosReales.find((p) => p.id === item.producto_id);
+      if (real && typeof real.stock === "number") {
+        const nuevoStock = Math.max(0, real.stock - item.cantidad);
+        await supabase
+          .from("productos")
+          .update({ stock: nuevoStock })
+          .eq("id", item.producto_id);
+      }
+    }
   }
 
   // Enviar email si hay correo configurado

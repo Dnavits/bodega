@@ -20,7 +20,8 @@ function LoginForm() {
 
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/";
+  const rawRedirect  = searchParams.get("redirect") || "/";
+  const redirectPath = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/";
   const supabase     = createClient();
 
   // Si ya tiene sesión activa, redirigir

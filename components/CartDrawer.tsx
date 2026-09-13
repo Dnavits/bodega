@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/lib/cart-context";
-import { CloseIcon, TrashIcon } from "@/components/Icons";
+import { CloseIcon, TrashIcon, CartIcon } from "@/components/Icons";
 import Link from "next/link";
 
 interface CartDrawerProps {
@@ -55,7 +55,9 @@ export function CartDrawer({ whatsapp, nombreBodega }: CartDrawerProps) {
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <span className="text-5xl mb-3">🧊</span>
+              <div className="w-16 h-16 rounded-full bg-surface border border-hairline flex items-center justify-center mb-3 text-ink-muted shadow-subtle">
+                <CartIcon className="w-8 h-8 text-ink-muted" />
+              </div>
               <p className="font-semibold text-ink text-sm">Tu carrito está vacío</p>
               <p className="text-xs text-ink-faint mt-1">Agrega bebidas desde el catálogo</p>
             </div>

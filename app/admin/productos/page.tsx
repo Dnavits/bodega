@@ -74,8 +74,8 @@ export default function AdminProductos() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
-      setError('Solo se permiten imágenes JPG o PNG');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
+      setError('Solo se permiten imágenes JPG, PNG o WebP.');
       return;
     }
 
@@ -593,7 +593,7 @@ export default function AdminProductos() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                 onChange={handleImageFile}
                 className="hidden"
               />
