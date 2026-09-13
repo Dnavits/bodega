@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SettingsIcon, PlusIcon, TrashIcon, ShieldAdminIcon } from "@/components/Icons";
-import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
+import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon } from "@/components/Icons";
 
 type WhitelistUser = {
   id: string;
@@ -194,10 +194,6 @@ notify pgrst, 'reload schema';`;
 
 export default function AdminConfiguracion() {
   const supabase = createClient();
-  const [nombreBodega, setNombreBodega] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
-  const [faviconUrl, setFaviconUrl] = useState("");
-  const [bannerAnuncio, setBannerAnuncio] = useState("");
   const [telefonoContacto, setTelefonoContacto] = useState("");
   const [whatsappPedidos, setWhatsappPedidos] = useState("");
   const [direccionBodega, setDireccionBodega] = useState("");
@@ -215,11 +211,7 @@ export default function AdminConfiguracion() {
   const [necesitaSql, setNecesitaSql] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
-  // File input refs
   const [configId, setConfigId] = useState<any>(null);
-
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   async function cargarDatos() {
     try {
@@ -231,10 +223,6 @@ export default function AdminConfiguracion() {
 
       if (config) {
         setConfigId(config.id);
-        setNombreBodega(config.nombre_bodega || "Bodega Dnavits");
-        setLogoUrl(config.logo_url || "");
-        setFaviconUrl(config.favicon_url || "");
-        setBannerAnuncio(config.banner_anuncio || "");
         setTelefonoContacto(config.telefono_contacto || "");
         setWhatsappPedidos(config.whatsapp_pedidos || "");
         setDireccionBodega(config.direccion_bodega || "");
@@ -257,32 +245,6 @@ export default function AdminConfiguracion() {
     cargarDatos();
   }, []);
 
-  // ── Manejo de subida de archivo para Logo ──
-  async function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const processed = await processImageFile(file, IMAGE_SPECS.logo);
-      setLogoUrl(processed);
-      setMensaje("✓ Logo cargado y adaptado a las medidas recomendadas. Haz clic en Guardar para aplicar.");
-    } catch (err: any) {
-      setError(err.message || "Error al procesar la imagen del logo.");
-    }
-  }
-
-  // ── Manejo de subida de archivo para Favicon ──
-  async function handleFaviconFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const processed = await processImageFile(file, IMAGE_SPECS.favicon);
-      setFaviconUrl(processed);
-      setMensaje("✓ Favicon cargado y recortado a 64x64 px. Haz clic en Guardar para aplicar.");
-    } catch (err: any) {
-      setError(err.message || "Error al procesar la imagen del favicon.");
-    }
-  }
-
   async function guardarConfiguracion(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -290,7 +252,6 @@ export default function AdminConfiguracion() {
     setNecesitaSql(false);
     setGuardando(true);
 
-    // Obtener ID actual de la fila en caso de que configId sea nulo
     let targetId = configId;
     if (targetId === null || targetId === undefined) {
       const { data: cur } = await supabase
@@ -301,11 +262,7 @@ export default function AdminConfiguracion() {
       if (cur) targetId = cur.id;
     }
 
-    const fullPayload: any = {
-      nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
-      logo_url: logoUrl.trim() || null,
-      favicon_url: faviconUrl.trim() || null,
-      banner_anuncio: bannerAnuncio.trim() || null,
+    const payload: any = {
       telefono_contacto: telefonoContacto.trim() || null,
       whatsapp_pedidos: whatsappPedidos.trim() || null,
       direccion_bodega: direccionBodega.trim() || null,
@@ -313,40 +270,19 @@ export default function AdminConfiguracion() {
       pedido_minimo: parseInt(pedidoMinimo, 10) || 0,
     };
 
-    // Intentar guardar
     let updateError: any = null;
 
     if (targetId !== null && targetId !== undefined) {
       const res = await supabase
         .from("configuracion")
-        .update(fullPayload)
+        .update(payload)
         .eq("id", targetId);
       updateError = res.error;
     } else {
       const res = await supabase
         .from("configuracion")
-        .insert([fullPayload]);
+        .insert([payload]);
       updateError = res.error;
-    }
-
-    // Si falla por columna faltante en Supabase (ej. banner_anuncio), guardar campos existentes
-    if (updateError && (updateError.message.includes("schema cache") || updateError.message.includes("column"))) {
-      const fallbackPayload = {
-        logo_url: logoUrl.trim() || null,
-        favicon_url: faviconUrl.trim() || null,
-      };
-
-      if (targetId !== null && targetId !== undefined) {
-        await supabase
-          .from("configuracion")
-          .update(fallbackPayload)
-          .eq("id", targetId);
-      }
-
-      setGuardando(false);
-      setMensaje("✓ Tu Logo y Favicon se guardaron correctamente.");
-      setNecesitaSql(true);
-      return;
     }
 
     setGuardando(false);
@@ -356,34 +292,31 @@ export default function AdminConfiguracion() {
       return;
     }
 
-    setMensaje("✓ Configuración de la bodega actualizada correctamente en vivo.");
+    setMensaje("✓ Ajustes operativos guardados con éxito.");
   }
 
   function handleCopiarSql() {
     navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
     setCopiado(true);
-    setTimeout(() => setCopiado(false), 2500);
+    setTimeout(() => setCopiado(false), 3000);
   }
 
   async function agregarAdminWhitelist(e: React.FormEvent) {
     e.preventDefault();
-    if (!nuevoEmail.trim() || !nuevoEmail.includes("@")) {
-      alert("Ingresa un correo electrónico válido.");
-      return;
-    }
+    if (!nuevoEmail.trim()) return;
 
     const { error: insertError } = await supabase
       .from("admin_whitelist")
       .insert([
         {
           email: nuevoEmail.trim().toLowerCase(),
-          nombre: nuevoNombre.trim() || "Administrador Autorizado",
+          nombre: nuevoNombre.trim() || "Administrador",
           activo: true,
         },
       ]);
 
     if (insertError) {
-      alert("Error al agregar a lista blanca: " + insertError.message);
+      alert("Error al agregar admin: " + insertError.message);
     } else {
       setNuevoEmail("");
       setNuevoNombre("");
@@ -392,12 +325,12 @@ export default function AdminConfiguracion() {
   }
 
   async function eliminarAdminWhitelist(id: string, email: string) {
-    if (!confirm(`¿Deseas retirar a "${email}" de la lista blanca de administradores?`)) return;
+    if (!confirm(`¿Deseas retirar a ${email} de los administradores?`)) return;
 
     const { error: delError } = await supabase
       .from("admin_whitelist")
       .delete()
-      .eq("id", id);
+      .eq("email", email);
 
     if (delError) {
       alert("Error al eliminar: " + delError.message);
@@ -407,30 +340,52 @@ export default function AdminConfiguracion() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8 max-w-5xl">
       {/* Encabezado */}
       <div>
         <span className="text-xs font-bold uppercase tracking-eyebrow text-accent">
-          Seguridad &amp; Configuración
+          Operación &amp; Accesos
         </span>
         <h1 className="font-inter font-black text-2xl sm:text-3xl text-ink mt-1">
-          Ajustes de Bodega &amp; Lista Blanca
+          Configuración del Negocio
         </h1>
         <p className="text-xs text-ink-muted mt-1">
-          Controla qué correos tienen permiso de acceder al panel y modifica la información pública de la tienda.
+          Administra los datos operativos de contacto, reglas de domicilio y los accesos de administradores.
         </p>
       </div>
 
-      {/* AVISO IMPORTANTE DE SQL SI FALTAN COLUMNAS EN SUPABASE */}
+      {/* Banner de redirección a Personalización */}
+      <div className="bg-canvas border border-accent/30 rounded-card p-5 shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-sky text-accent flex items-center justify-center shrink-0">
+            <PaletteIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-ink">¿Buscas cambiar el nombre, logo, portada u horario?</h2>
+            <p className="text-xs text-ink-muted">
+              Toda la identidad de marca y diseño visual de la tienda se gestiona exclusivamente en Personalización.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/admin/personalizacion"
+          className="inline-flex items-center gap-2 bg-ink hover:bg-ink-light text-white text-xs font-bold px-4 py-2.5 rounded-btn shadow-portrait transition-all active:scale-95 shrink-0"
+        >
+          <span>Ir a Personalización</span>
+          <span>→</span>
+        </Link>
+      </div>
+
+      {/* Script SQL si lo necesita */}
       {necesitaSql && (
         <div className="bg-sky/60 border-2 border-accent/40 rounded-card p-6 shadow-card animate-fade-in-up">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-inter font-bold text-sm text-ink flex items-center gap-2">
-                <span>⚡ Habilitar Columnas Avanzadas en Supabase</span>
+                <span>⚡ Habilitar Columnas en Supabase</span>
               </h3>
               <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                Tu base de datos en Supabase tiene la versión inicial de la tabla <code>configuracion</code>. Para que los campos de <strong>Banner de Anuncio, Nombre, Teléfono y Domicilio</strong> se guarden en la nube, ejecuta este comando en el SQL Editor de tu proyecto Supabase:
+                Para sincronizar completamente las columnas de tu base de datos, copia y ejecuta este script en el SQL Editor de Supabase:
               </p>
             </div>
             <button
@@ -444,13 +399,10 @@ export default function AdminConfiguracion() {
           <pre className="mt-3 p-3.5 bg-canvas border border-hairline rounded-input text-[11px] text-ink font-mono overflow-x-auto max-h-40">
             {SQL_MIGRATION_SCRIPT}
           </pre>
-          <p className="text-[11px] text-ink-faint mt-2">
-            👉 <strong>Pasos:</strong> Ve a tu panel de <strong>Supabase</strong> &gt; <strong>SQL Editor</strong> &gt; Pega este código y presiona <strong>RUN</strong>. Luego vuelve aquí y guarda los ajustes.
-          </p>
         </div>
       )}
 
-      {/* SECCIÓN 1: AJUSTES DE MARCA Y BANNERS */}
+      {/* SECCIÓN 1: AJUSTES OPERATIVOS Y DOMICILIOS */}
       <form
         onSubmit={guardarConfiguracion}
         className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-6"
@@ -461,47 +413,19 @@ export default function AdminConfiguracion() {
           </div>
           <div>
             <h2 className="font-inter font-bold text-base text-ink">
-              Ajustes de la Tienda Pública
+              Operación, Contacto &amp; Domicilios
             </h2>
             <p className="text-xs text-ink-muted">
-              Modifica los textos informativos, datos de contacto y valores de domicilio.
+              Valores numéricos de entrega y canales a donde los clientes enviarán sus pedidos.
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Nombre Bodega */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Nombre de la Bodega
-            </label>
-            <input
-              type="text"
-              value={nombreBodega}
-              onChange={(e) => setNombreBodega(e.target.value)}
-              placeholder="Postobón Supia"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
-          {/* Banner Superior */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Texto del Banner de Anuncio Superior
-            </label>
-            <input
-              type="text"
-              value={bannerAnuncio}
-              onChange={(e) => setBannerAnuncio(e.target.value)}
-              placeholder="Ej: 🍻 Envíos fríos en menos de 45 min en Medellín · Bebidas heladas"
-              className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-            />
-          </div>
-
           {/* WhatsApp de Pedidos */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Número de WhatsApp para Pedidos (con código de país)
+              WhatsApp para Recibir Pedidos (con código de país)
             </label>
             <input
               type="text"
@@ -510,6 +434,9 @@ export default function AdminConfiguracion() {
               placeholder="573019519391"
               className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
             />
+            <p className="text-[11px] text-ink-faint mt-1">
+              A este número llegará el mensaje predeterminado cuando un cliente elija confirmar por WhatsApp.
+            </p>
           </div>
 
           {/* Teléfono de Contacto */}
@@ -524,18 +451,21 @@ export default function AdminConfiguracion() {
               placeholder="3019519391"
               className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
             />
+            <p className="text-[11px] text-ink-faint mt-1">
+              Se muestra en el pie de página para llamadas directas.
+            </p>
           </div>
 
-          {/* Dirección */}
-          <div>
+          {/* Dirección de la Bodega */}
+          <div className="md:col-span-2">
             <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-              Dirección de la Bodega
+              Dirección Física o Zona de Cobertura
             </label>
             <input
               type="text"
               value={direccionBodega}
               onChange={(e) => setDireccionBodega(e.target.value)}
-              placeholder="Medellín, Antioquia"
+              placeholder="Medellín, Antioquia (Valle de Aburrá)"
               className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
             />
           </div>
@@ -567,114 +497,6 @@ export default function AdminConfiguracion() {
               className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
             />
           </div>
-
-          {/* UPLOAD DE LOGO CON MEDIDAS Y ARCHIVO O URL */}
-          <div className="md:col-span-2 p-4 bg-surface border border-hairline rounded-card space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
-                  Logo Personalizado
-                </label>
-                <p className="text-[11px] text-accent font-semibold">
-                  📐 Medidas recomendadas: {IMAGE_SPECS.logo.recommended}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => logoInputRef.current?.click()}
-                className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
-              >
-                📁 Subir Archivo de Logo
-              </button>
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoFile}
-                className="hidden"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="O pega la URL del Logo (https://...)"
-                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2 text-xs text-ink placeholder-ink-faint outline-none"
-              />
-            </div>
-
-            {logoUrl && (
-              <div className="p-3 bg-canvas border border-hairline rounded-card flex items-center gap-4">
-                <img src={logoUrl} alt="Vista previa logo" className="h-12 w-auto max-w-[200px] object-contain rounded" />
-                <div className="text-xs text-ink-muted">
-                  <span className="font-semibold text-emerald">✓ Logo cargado</span>
-                  <button
-                    type="button"
-                    onClick={() => setLogoUrl("")}
-                    className="block text-[11px] text-danger hover:underline mt-0.5"
-                  >
-                    Quitar logo
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* UPLOAD DE FAVICON CON MEDIDAS Y ARCHIVO O URL */}
-          <div className="md:col-span-2 p-4 bg-surface border border-hairline rounded-card space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
-                  Favicon de la Página
-                </label>
-                <p className="text-[11px] text-accent font-semibold">
-                  📐 Medidas recomendadas: {IMAGE_SPECS.favicon.recommended}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => faviconInputRef.current?.click()}
-                className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
-              >
-                📁 Subir Archivo Favicon
-              </button>
-              <input
-                ref={faviconInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFaviconFile}
-                className="hidden"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={faviconUrl}
-                onChange={(e) => setFaviconUrl(e.target.value)}
-                placeholder="O pega la URL del Favicon (https://...)"
-                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2 text-xs text-ink placeholder-ink-faint outline-none"
-              />
-            </div>
-
-            {faviconUrl && (
-              <div className="p-3 bg-canvas border border-hairline rounded-card flex items-center gap-4">
-                <img src={faviconUrl} alt="Vista previa favicon" className="h-8 w-8 object-contain rounded" />
-                <div className="text-xs text-ink-muted">
-                  <span className="font-semibold text-emerald">✓ Favicon cargado</span>
-                  <button
-                    type="button"
-                    onClick={() => setFaviconUrl("")}
-                    className="block text-[11px] text-danger hover:underline mt-0.5"
-                  >
-                    Quitar favicon
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         {error && (
@@ -694,11 +516,11 @@ export default function AdminConfiguracion() {
           disabled={guardando}
           className="px-8 py-3 bg-ink hover:bg-ink-light text-white font-bold rounded-btn text-sm shadow-portrait transition-all active:scale-95 disabled:opacity-60"
         >
-          {guardando ? "Guardando..." : "Guardar Ajustes de la Tienda"}
+          {guardando ? "Guardando..." : "Guardar Ajustes Operativos"}
         </button>
       </form>
 
-      {/* SECCIÓN 2: LISTA BLANCA DE CORREOS PARA EL DASHBOARD */}
+      {/* SECCIÓN 2: LISTA BLANCA DE CORREOS (ADMINS) */}
       <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
@@ -709,7 +531,7 @@ export default function AdminConfiguracion() {
               Lista Blanca de Administradores (Whitelist)
             </h2>
             <p className="text-xs text-ink-muted">
-              Los usuarios que inicien sesión con estos correos tendrán acceso completo al panel de control.
+              Los usuarios que inicien sesión con estos correos tendrán acceso al panel administrativo.
             </p>
           </div>
         </div>
@@ -765,7 +587,7 @@ export default function AdminConfiguracion() {
                 </tr>
               ) : (
                 whitelist.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-surface transition-colors">
+                  <tr key={admin.id || admin.email} className="hover:bg-surface transition-colors">
                     <td className="p-3 font-bold text-ink font-mono">
                       {admin.email}
                     </td>
