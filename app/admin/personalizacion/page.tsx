@@ -136,8 +136,21 @@ export default function AdminPersonalizacion() {
     setMensaje("");
     setGuardando(true);
 
+    // Obtener ID actual de la fila para usar UPDATE (permitido por RLS)
+    let targetId = configId;
+    if (targetId === null || targetId === undefined) {
+      const { data: cur } = await supabase
+        .from("configuracion")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+      if (cur) {
+        targetId = cur.id;
+        setConfigId(cur.id);
+      }
+    }
+
     const payload: any = {
-      id: configId !== null && configId !== undefined ? configId : 1,
       nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
       subtitulo_bodega: subtituloBodega.trim() || "Licores & Bebidas Heladas",
       titulo_pestana: tituloPestana.trim() || null,
@@ -156,20 +169,30 @@ export default function AdminPersonalizacion() {
       horario_dias: horarioDias,
     };
 
-    let { error: updateError } = await supabase
-      .from("configuracion")
-      .upsert(payload);
+    let updateError: any = null;
 
-    if (updateError && updateError.message?.includes("column")) {
-      const fallbackPayload = { ...payload };
-      delete fallbackPayload.horario_texto;
-      delete fallbackPayload.horario_inicio;
-      delete fallbackPayload.horario_fin;
-      delete fallbackPayload.horario_dias;
-      const retry = await supabase.from("configuracion").upsert(fallbackPayload);
-      if (!retry.error) {
-        updateError = null;
+    if (targetId !== null && targetId !== undefined) {
+      const res = await supabase
+        .from("configuracion")
+        .update(payload)
+        .eq("id", targetId);
+      updateError = res.error;
+
+      // Si falla por columnas que aún no existen en la base de datos, reintentar sin las columnas nuevas
+      if (updateError && updateError.message?.includes("column")) {
+        const fallback = { ...payload };
+        delete fallback.horario_texto;
+        delete fallback.horario_inicio;
+        delete fallback.horario_fin;
+        delete fallback.horario_dias;
+        const retry = await supabase.from("configuracion").update(fallback).eq("id", targetId);
+        updateError = retry.error;
       }
+    } else {
+      // Si la fila aún no existe, insertar
+      const res = await supabase.from("configuracion").insert(payload).select().single();
+      updateError = res.error;
+      if (res.data) setConfigId(res.data.id);
     }
 
     setGuardando(false);
