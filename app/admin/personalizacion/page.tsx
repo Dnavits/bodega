@@ -6,6 +6,56 @@ import { PaletteIcon, PlusIcon, TrashIcon } from "@/components/Icons";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
 
 
+function formatearHora12h(hora24: string): string {
+  if (!hora24) return "";
+  const [hStr, mStr] = hora24.split(":");
+  let h = parseInt(hStr, 10);
+  const m = mStr || "00";
+  if (isNaN(h)) return hora24;
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  h = h ? h : 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function generarTextoDias(dias: string[]): string {
+  if (!dias || dias.length === 0) return "Cerrado temporalmente";
+  const ordenSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const diasOrdenados = ordenSemana.filter((d) => dias.includes(d));
+
+  if (diasOrdenados.length === 7) return "Lunes a Domingo";
+  if (diasOrdenados.length === 6 && !diasOrdenados.includes("Domingo")) return "Lunes a Sábado";
+  if (diasOrdenados.length === 5 && !diasOrdenados.includes("Sábado") && !diasOrdenados.includes("Domingo")) return "Lunes a Viernes";
+  if (diasOrdenados.length === 2 && diasOrdenados.includes("Sábado") && diasOrdenados.includes("Domingo")) return "Sábados y Domingos";
+
+  const indices = diasOrdenados.map((d) => ordenSemana.indexOf(d));
+  let esContinuo = true;
+  for (let i = 1; i < indices.length; i++) {
+    if (indices[i] !== indices[i - 1] + 1) {
+      esContinuo = false;
+      break;
+    }
+  }
+
+  if (esContinuo && diasOrdenados.length >= 3) {
+    return `${diasOrdenados[0]} a ${diasOrdenados[diasOrdenados.length - 1]}`;
+  }
+
+  if (diasOrdenados.length === 1) return `Solo ${diasOrdenados[0]}`;
+  if (diasOrdenados.length === 2) return `${diasOrdenados[0]} y ${diasOrdenados[1]}`;
+
+  return diasOrdenados.join(", ");
+}
+
+function calcularHorarioDescriptivo(dias: string[], inicio: string, fin: string): string {
+  const textoDias = generarTextoDias(dias);
+  if (dias.length === 0) return textoDias;
+  if (!inicio || !fin) return textoDias;
+  const horaInicio12 = formatearHora12h(inicio);
+  const horaFin12 = formatearHora12h(fin);
+  return `${textoDias}: ${horaInicio12} - ${horaFin12}`;
+}
+
 export default function AdminPersonalizacion() {
   const supabase = createClient();
   const [configId, setConfigId] = useState<any>(null);
@@ -128,6 +178,29 @@ export default function AdminPersonalizacion() {
   // Eliminar feature pill
   function eliminarFeature(index: number) {
     setHeroFeatures(heroFeatures.filter((_, i) => i !== index));
+  }
+
+  // Manejadores reactivos para cálculo automático del horario
+  function handleCambioHoraInicio(nuevoInicio: string) {
+    setHorarioInicio(nuevoInicio);
+    setHorarioTexto(calcularHorarioDescriptivo(horarioDias, nuevoInicio, horarioFin));
+  }
+
+  function handleCambioHoraFin(nuevoFin: string) {
+    setHorarioFin(nuevoFin);
+    setHorarioTexto(calcularHorarioDescriptivo(horarioDias, horarioInicio, nuevoFin));
+  }
+
+  function handleToggleDia(dia: string) {
+    const nuevosDias = horarioDias.includes(dia)
+      ? horarioDias.filter((d) => d !== dia)
+      : [...horarioDias, dia];
+    setHorarioDias(nuevosDias);
+    setHorarioTexto(calcularHorarioDescriptivo(nuevosDias, horarioInicio, horarioFin));
+  }
+
+  function regenerarHorarioAuto() {
+    setHorarioTexto(calcularHorarioDescriptivo(horarioDias, horarioInicio, horarioFin));
   }
 
   async function guardarPersonalizacion(e: React.FormEvent) {
@@ -532,7 +605,7 @@ export default function AdminPersonalizacion() {
         </div>
 
         {/* BLOQUE: HORARIO DE ATENCION */}
-        <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-4">
+        <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-5">
           <div className="flex items-center gap-3 border-b border-divider pb-4">
             <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
               <span className="text-base">⏰</span>
@@ -542,25 +615,12 @@ export default function AdminPersonalizacion() {
                 Horario de Atención
               </h2>
               <p className="text-xs text-ink-muted">
-                Configura los días y horas en los que la bodega está abierta.
+                Configura los días y horas de servicio. El texto descriptivo se genera automáticamente al cambiar las horas o los días.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-                Texto descriptivo del horario
-              </label>
-              <input
-                type="text"
-                value={horarioTexto}
-                onChange={(e) => setHorarioTexto(e.target.value)}
-                placeholder="Ej: Lunes a Domingo: 9:00 AM - 11:00 PM"
-                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
-              />
-            </div>
-            
             <div>
               <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
                 Hora de apertura
@@ -568,8 +628,8 @@ export default function AdminPersonalizacion() {
               <input
                 type="time"
                 value={horarioInicio}
-                onChange={(e) => setHorarioInicio(e.target.value)}
-                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+                onChange={(e) => handleCambioHoraInicio(e.target.value)}
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none transition-colors"
               />
             </div>
             
@@ -580,30 +640,118 @@ export default function AdminPersonalizacion() {
               <input
                 type="time"
                 value={horarioFin}
-                onChange={(e) => setHorarioFin(e.target.value)}
-                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+                onChange={(e) => handleCambioHoraFin(e.target.value)}
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none transition-colors"
               />
             </div>
-            
+
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1.5">
-                Días de atención
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map(dia => (
-                  <label key={dia} className="flex items-center gap-1.5 bg-surface px-3 py-1.5 rounded border border-hairline text-sm">
-                    <input 
-                      type="checkbox" 
-                      checked={horarioDias.includes(dia)}
-                      onChange={(e) => {
-                        if (e.target.checked) setHorarioDias([...horarioDias, dia]);
-                        else setHorarioDias(horarioDias.filter(d => d !== dia));
-                      }}
-                    />
-                    {dia}
-                  </label>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted">
+                  Días de atención
+                </label>
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const todos = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+                      setHorarioDias(todos);
+                      setHorarioTexto(calcularHorarioDescriptivo(todos, horarioInicio, horarioFin));
+                    }}
+                    className="text-[11px] text-accent font-semibold hover:underline"
+                  >
+                    Todos los días
+                  </button>
+                  <span className="text-ink-faint">·</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const lunVie = ["Lunes","Martes","Miércoles","Jueves","Viernes"];
+                      setHorarioDias(lunVie);
+                      setHorarioTexto(calcularHorarioDescriptivo(lunVie, horarioInicio, horarioFin));
+                    }}
+                    className="text-[11px] text-accent font-semibold hover:underline"
+                  >
+                    Lunes a Viernes
+                  </button>
+                  <span className="text-ink-faint">·</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fines = ["Viernes","Sábado","Domingo"];
+                      setHorarioDias(fines);
+                      setHorarioTexto(calcularHorarioDescriptivo(fines, horarioInicio, horarioFin));
+                    }}
+                    className="text-[11px] text-accent font-semibold hover:underline"
+                  >
+                    Fines de semana
+                  </button>
+                </div>
               </div>
+              <div className="flex flex-wrap gap-2">
+                {["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map((dia) => {
+                  const seleccionado = horarioDias.includes(dia);
+                  return (
+                    <button
+                      key={dia}
+                      type="button"
+                      onClick={() => handleToggleDia(dia)}
+                      className={`px-3.5 py-1.5 rounded-btn text-xs font-semibold transition-all border ${
+                        seleccionado
+                          ? "bg-ink text-white border-ink shadow-subtle"
+                          : "bg-surface text-ink-muted border-hairline hover:bg-canvas hover:text-ink"
+                      }`}
+                    >
+                      {seleccionado ? `✓ ${dia}` : dia}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="md:col-span-2 pt-2 border-t border-divider">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted">
+                  Texto descriptivo del horario (Visible en el pie de página)
+                </label>
+                <button
+                  type="button"
+                  onClick={regenerarHorarioAuto}
+                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1"
+                  title="Recalcular texto automáticamente según las horas y días seleccionados"
+                >
+                  <span>✨ Regenerar texto automático</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                value={horarioTexto}
+                onChange={(e) => setHorarioTexto(e.target.value)}
+                placeholder="Ej: Lunes a Domingo: 9:00 AM - 11:00 PM"
+                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-sm text-ink outline-none"
+              />
+              <p className="text-[11px] text-ink-faint mt-1">
+                Se sincroniza en tiempo real según las horas y días elegidos. Si lo deseas, también puedes personalizar el texto directamente.
+              </p>
+            </div>
+
+            {/* Vista previa en vivo del pie de página */}
+            <div className="md:col-span-2 p-3.5 bg-surface border border-hairline rounded-card flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <span className="text-base">🕒</span>
+                <div>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-eyebrow">
+                    Vista previa en el Footer
+                  </p>
+                  <p className="text-xs font-bold text-ink">
+                    {horarioTexto || "Sin horario configurado"}
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-pill text-[10px] font-bold bg-mint text-emerald border border-emerald/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald" />
+                Sincronizado
+              </span>
             </div>
           </div>
         </div>
