@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BeerIcon, WhatsAppIcon } from "@/components/Icons";
+import { BeerIcon, WhatsAppIcon, ZapIcon, SnowflakeIcon, CreditCardIcon, CheckCircleIcon } from "@/components/Icons";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
 
 interface HeroProps {
@@ -15,10 +15,38 @@ interface HeroProps {
 }
 
 const DEFAULT_FEATURES = [
-  "⚡ Entrega en 1-2 días hábiles",
-  "❄️ Siempre frío",
-  "💳 Nequi · Efectivo · Transferencia",
+  "Entrega en 1-2 días hábiles",
+  "Siempre frío",
+  "Nequi · Efectivo · Transferencia",
 ];
+
+function getFeatureIconAndCleanText(feat: string) {
+  const clean = feat.replace(/^[\p{Emoji}\s]+/u, "").trim() || feat;
+  const lower = feat.toLowerCase();
+
+  if (lower.includes("frío") || lower.includes("frio") || lower.includes("helad") || lower.includes("❄")) {
+    return {
+      icon: <SnowflakeIcon className="w-3.5 h-3.5 text-sky-500 shrink-0" />,
+      text: clean,
+    };
+  }
+  if (lower.includes("pago") || lower.includes("nequi") || lower.includes("efectivo") || lower.includes("transferencia") || lower.includes("tarjeta") || lower.includes("💳")) {
+    return {
+      icon: <CreditCardIcon className="w-3.5 h-3.5 text-emerald shrink-0" />,
+      text: clean,
+    };
+  }
+  if (lower.includes("entrega") || lower.includes("envío") || lower.includes("envio") || lower.includes("min") || lower.includes("días") || lower.includes("dias") || lower.includes("express") || lower.includes("⚡") || lower.includes("🚀")) {
+    return {
+      icon: <ZapIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />,
+      text: clean,
+    };
+  }
+  return {
+    icon: <CheckCircleIcon className="w-3.5 h-3.5 text-accent shrink-0" />,
+    text: clean,
+  };
+}
 
 export function Hero({
   nombreBodega,
@@ -72,14 +100,18 @@ export function Hero({
 
         {/* Feature pills dinámicos (agregar, editar, eliminar) */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-ink-muted">
-          {featuresList.map((feat, idx) => (
-            <span
-              key={idx}
-              className="bg-canvas border border-hairline rounded-tag px-3.5 py-1.5 shadow-subtle"
-            >
-              {feat}
-            </span>
-          ))}
+          {featuresList.map((feat, idx) => {
+            const { icon, text } = getFeatureIconAndCleanText(feat);
+            return (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-1.5 bg-canvas border border-hairline rounded-tag px-3.5 py-1.5 shadow-subtle hover:border-slate-300 transition-colors"
+              >
+                {icon}
+                <span>{text}</span>
+              </span>
+            );
+          })}
         </div>
 
         {/* CTAs */}

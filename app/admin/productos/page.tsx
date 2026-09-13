@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PlusIcon, TrashIcon, BeerIcon, ExcelIcon } from "@/components/Icons";
+import { PlusIcon, TrashIcon, BeerIcon, ExcelIcon, UploadIcon, RulerIcon, PencilIcon } from "@/components/Icons";
 import { CATEGORIAS_PRODUCTOS, CATEGORIA_LABELS } from "@/lib/constants";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
 import * as XLSX from "xlsx";
@@ -577,8 +577,9 @@ export default function AdminProductos() {
                 <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
                   Fotografía del Producto
                 </label>
-                <p className="text-[11px] text-accent font-semibold">
-                  📐 Medidas recomendadas: {IMAGE_SPECS.producto.recommended}
+                <p className="text-[11px] text-accent font-semibold flex items-center gap-1 mt-0.5">
+                  <RulerIcon className="w-3.5 h-3.5" />
+                  <span>Medidas recomendadas: {IMAGE_SPECS.producto.recommended}</span>
                 </p>
               </div>
               <button
@@ -586,7 +587,8 @@ export default function AdminProductos() {
                 onClick={() => fileInputRef.current?.click()}
                 className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
               >
-                📁 Seleccionar Archivo desde tu Equipo
+                <UploadIcon className="w-3.5 h-3.5" />
+                <span>Seleccionar Archivo</span>
               </button>
               <input
                 ref={fileInputRef}
@@ -767,15 +769,17 @@ export default function AdminProductos() {
                     <td className="py-3.5 text-right space-x-2">
                       <button
                         onClick={() => comenzarEdicion(p)}
-                        className="px-3 py-1.5 bg-canvas hover:bg-surface text-ink font-semibold rounded-btn border border-hairline shadow-subtle transition-all"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-canvas hover:bg-surface text-ink text-xs font-semibold rounded-btn border border-hairline shadow-subtle transition-all active:scale-95"
                       >
-                        Editar
+                        <PencilIcon className="w-3.5 h-3.5" />
+                        <span>Editar</span>
                       </button>
                       <button
                         onClick={() => eliminarProducto(p.id, p.nombre)}
-                        className="px-3 py-1.5 bg-danger-soft hover:bg-danger/20 text-danger font-semibold rounded-btn border border-danger/20 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-danger-soft hover:bg-danger/20 text-danger text-xs font-semibold rounded-btn border border-danger/20 transition-colors active:scale-95"
                       >
-                        Eliminar
+                        <TrashIcon className="w-3.5 h-3.5" />
+                        <span>Eliminar</span>
                       </button>
                     </td>
                   </tr>

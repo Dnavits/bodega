@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon } from "@/components/Icons";
+import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon, DatabaseIcon } from "@/components/Icons";
 
 type WhitelistUser = {
   id: string;
@@ -120,7 +120,7 @@ alter table public.configuracion add column if not exists hero_badge text defaul
 alter table public.configuracion add column if not exists hero_titulo text default 'Tus bebidas heladas,';
 alter table public.configuracion add column if not exists hero_subtitulo_rainbow text default 'en minutos';
 alter table public.configuracion add column if not exists hero_descripcion text default 'Gaseosas, cervezas, aguas y licores directo de la bodega a tu puerta. Precios directos, sin intermediarios, siempre fríos.';
-alter table public.configuracion add column if not exists hero_features text[] default '{"⚡ Entrega en 1-2 días hábiles", "❄️ Siempre frío", "💳 Nequi · Efectivo · Transferencia"}';
+alter table public.configuracion add column if not exists hero_features text[] default '{"Entrega en 1-2 días hábiles", "Siempre frío", "Nequi · Efectivo · Transferencia"}';
 alter table public.configuracion add column if not exists mostrar_whatsapp_flotante boolean default true;
 alter table public.configuracion add column if not exists horario_texto text default 'Lunes a Domingo: 9:00 AM - 11:00 PM';
 alter table public.configuracion add column if not exists horario_inicio time default '09:00';
@@ -382,7 +382,8 @@ export default function AdminConfiguracion() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-inter font-bold text-sm text-ink flex items-center gap-2">
-                <span>⚡ Habilitar Columnas en Supabase</span>
+                <DatabaseIcon className="w-4 h-4 text-accent shrink-0" />
+                <span>Habilitar Columnas en Supabase</span>
               </h3>
               <p className="text-xs text-ink-muted mt-1 leading-relaxed">
                 Para sincronizar completamente las columnas de tu base de datos, copia y ejecuta este script en el SQL Editor de Supabase:

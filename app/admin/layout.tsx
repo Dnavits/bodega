@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminAccess } from "@/lib/admin-auth";
-import { BeerIcon, ShieldAdminIcon } from "@/components/Icons";
+import { BeerIcon, ShieldAdminIcon, AlertCircleIcon } from "@/components/Icons";
 import { AdminNav } from "@/components/AdminNav";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             El correo <strong className="text-accent font-semibold">{user.email}</strong> no se encuentra en la <strong>lista blanca de administradores</strong> autorizados para la Bodega Dnavits.
           </p>
           <div className="p-3.5 bg-surface border border-hairline rounded-card text-[11px] text-ink-muted mb-6 text-left space-y-1">
-            <p>💡 <strong>¿Cómo autorizar este correo?</strong></p>
+            <p className="flex items-center gap-1.5"><AlertCircleIcon className="w-3.5 h-3.5 text-accent shrink-0" /> <strong>¿Cómo autorizar este correo?</strong></p>
             <p>1. Ve a Supabase &gt; Table Editor &gt; <code className="text-accent font-mono font-bold">admin_whitelist</code>.</p>
             <p>2. Agrega una fila con tu correo exacto y <code className="text-emerald font-mono font-bold">activo = true</code>.</p>
           </div>

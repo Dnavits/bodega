@@ -206,8 +206,9 @@ export function Navbar({ nombreBodega, subtituloBodega, logoUrl, bannerAnuncio, 
                       <p className="font-semibold text-sm text-ink truncate">{displayName}</p>
                       <p className="text-[11px] text-ink-faint truncate mt-0.5">{user.email}</p>
                       {isAdmin && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 bg-sky text-accent font-bold text-[10px] uppercase tracking-eyebrow px-2 py-0.5 rounded-tag">
-                          ⚡ Administrador Autorizado
+                        <span className="inline-flex items-center gap-1.5 mt-1.5 bg-sky text-accent font-bold text-[10px] uppercase tracking-eyebrow px-2 py-0.5 rounded-tag">
+                          <ShieldAdminIcon className="w-3 h-3 text-accent" />
+                          <span>Administrador Autorizado</span>
                         </span>
                       )}
                     </div>

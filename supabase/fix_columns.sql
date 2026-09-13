@@ -122,7 +122,7 @@ alter table public.configuracion add column if not exists hero_badge text defaul
 alter table public.configuracion add column if not exists hero_titulo text default 'Tus bebidas heladas,';
 alter table public.configuracion add column if not exists hero_subtitulo_rainbow text default 'en minutos';
 alter table public.configuracion add column if not exists hero_descripcion text default 'Gaseosas, cervezas, aguas y licores directo de la bodega a tu puerta. Precios directos, sin intermediarios, siempre fríos.';
-alter table public.configuracion add column if not exists hero_features text[] default '{"⚡ Entrega en 1-2 días hábiles", "❄️ Siempre frío", "💳 Nequi · Efectivo · Transferencia"}';
+alter table public.configuracion add column if not exists hero_features text[] default '{"Entrega en 1-2 días hábiles", "Siempre frío", "Nequi · Efectivo · Transferencia"}';
 alter table public.configuracion add column if not exists mostrar_whatsapp_flotante boolean default true;
 alter table public.configuracion add column if not exists horario_texto text default 'Lunes a Domingo: 9:00 AM - 11:00 PM';
 alter table public.configuracion add column if not exists horario_inicio time default '09:00';

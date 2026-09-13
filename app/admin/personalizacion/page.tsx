@@ -2,7 +2,18 @@
 
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PaletteIcon, PlusIcon, TrashIcon } from "@/components/Icons";
+import {
+  PaletteIcon,
+  PlusIcon,
+  TrashIcon,
+  SparklesIcon,
+  ClockIcon,
+  MessageCircleIcon,
+  UploadIcon,
+  RulerIcon,
+  RocketIcon,
+  RefreshCwIcon,
+} from "@/components/Icons";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
 
 
@@ -76,9 +87,9 @@ export default function AdminPersonalizacion() {
     "Gaseosas, cervezas, aguas y licores directo de la bodega a tu puerta. Precios directos, sin intermediarios, siempre fríos."
   );
   const [heroFeatures, setHeroFeatures] = useState<string[]>([
-    "⚡ Entrega en <45 min",
-    "❄️ Siempre frío",
-    "💳 Nequi · Efectivo · Transferencia",
+    "Entrega en 1-2 días hábiles",
+    "Siempre frío",
+    "Nequi · Efectivo · Transferencia",
   ]);
   const [nuevaFeature, setNuevaFeature] = useState("");
 
@@ -379,16 +390,18 @@ export default function AdminPersonalizacion() {
                   <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
                     Logo de la Tienda
                   </label>
-                  <p className="text-[10px] text-accent font-semibold">
-                    {IMAGE_SPECS.logo.recommended}
+                  <p className="text-[10px] text-accent font-semibold flex items-center gap-1 mt-0.5">
+                    <RulerIcon className="w-3 h-3 shrink-0" />
+                    <span>{IMAGE_SPECS.logo.recommended}</span>
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
-                  className="bg-canvas border border-hairline text-ink text-xs font-bold px-3 py-1.5 rounded-btn shadow-subtle hover:bg-surface"
+                  className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3 py-1.5 rounded-btn shadow-subtle flex items-center gap-1.5 transition-all active:scale-95"
                 >
-                  📁 Subir Archivo
+                  <UploadIcon className="w-3.5 h-3.5 text-accent" />
+                  <span>Subir Logo</span>
                 </button>
                 <input
                   ref={logoInputRef}
@@ -426,16 +439,18 @@ export default function AdminPersonalizacion() {
                   <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
                     Favicon (Ícono de la Pestaña)
                   </label>
-                  <p className="text-[10px] text-accent font-semibold">
-                    {IMAGE_SPECS.favicon.recommended}
+                  <p className="text-[10px] text-accent font-semibold flex items-center gap-1 mt-0.5">
+                    <RulerIcon className="w-3 h-3 shrink-0" />
+                    <span>{IMAGE_SPECS.favicon.recommended}</span>
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => faviconInputRef.current?.click()}
-                  className="bg-canvas border border-hairline text-ink text-xs font-bold px-3 py-1.5 rounded-btn shadow-subtle hover:bg-surface"
+                  className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3 py-1.5 rounded-btn shadow-subtle flex items-center gap-1.5 transition-all active:scale-95"
                 >
-                  📁 Subir Archivo
+                  <UploadIcon className="w-3.5 h-3.5 text-accent" />
+                  <span>Subir Favicon</span>
                 </button>
                 <input
                   ref={faviconInputRef}
@@ -472,7 +487,7 @@ export default function AdminPersonalizacion() {
         <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-5">
           <div className="flex items-center gap-3 border-b border-divider pb-4">
             <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
-              <span className="text-base">🚀</span>
+              <RocketIcon className="w-5 h-5 text-accent" />
             </div>
             <div>
               <h2 className="font-inter font-bold text-base text-ink">
@@ -580,7 +595,7 @@ export default function AdminPersonalizacion() {
               <div className="flex gap-2 pt-2 border-t border-divider">
                 <input
                   type="text"
-                  placeholder="Ej: 🚀 Entregas en Supia y alrededores"
+                  placeholder="Ej: Entregas rápidas en Supía y alrededores"
                   value={nuevaFeature}
                   onChange={(e) => setNuevaFeature(e.target.value)}
                   className="flex-1 bg-canvas border border-hairline rounded-input px-3 py-1.5 text-xs text-ink outline-none"
@@ -608,7 +623,7 @@ export default function AdminPersonalizacion() {
         <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-5">
           <div className="flex items-center gap-3 border-b border-divider pb-4">
             <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center font-bold">
-              <span className="text-base">⏰</span>
+              <ClockIcon className="w-5 h-5 text-accent" />
             </div>
             <div>
               <h2 className="font-inter font-bold text-base text-ink">
@@ -717,10 +732,11 @@ export default function AdminPersonalizacion() {
                 <button
                   type="button"
                   onClick={regenerarHorarioAuto}
-                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1"
+                  className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1.5 active:scale-95 transition-all"
                   title="Recalcular texto automáticamente según las horas y días seleccionados"
                 >
-                  <span>✨ Regenerar texto automático</span>
+                  <RefreshCwIcon className="w-3.5 h-3.5" />
+                  <span>Regenerar texto automático</span>
                 </button>
               </div>
               <input
@@ -738,7 +754,9 @@ export default function AdminPersonalizacion() {
             {/* Vista previa en vivo del pie de página */}
             <div className="md:col-span-2 p-3.5 bg-surface border border-hairline rounded-card flex items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <span className="text-base">🕒</span>
+                <div className="w-7 h-7 rounded-full bg-sky text-accent flex items-center justify-center shrink-0">
+                  <ClockIcon className="w-4 h-4" />
+                </div>
                 <div>
                   <p className="text-[10px] font-bold text-ink-muted uppercase tracking-eyebrow">
                     Vista previa en el Footer
@@ -759,8 +777,8 @@ export default function AdminPersonalizacion() {
         {/* BLOQUE 3: BOTONES Y CANALES FLOTANTES */}
         <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-4">
           <div className="flex items-center gap-3 border-b border-divider pb-4">
-            <div className="w-10 h-10 rounded-card bg-emerald-soft text-emerald flex items-center justify-center font-bold">
-              <span className="text-base">💬</span>
+            <div className="w-10 h-10 rounded-card bg-emerald-soft text-emerald flex items-center justify-center font-bold shadow-subtle">
+              <MessageCircleIcon className="w-5 h-5 text-emerald" />
             </div>
             <div>
               <h2 className="font-inter font-bold text-base text-ink">
