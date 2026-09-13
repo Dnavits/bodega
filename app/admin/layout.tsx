@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { BeerIcon, ShieldAdminIcon, AlertCircleIcon } from "@/components/Icons";
 import { AdminNav } from "@/components/AdminNav";
+import { getSiteConfig } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Verificar si el usuario está en la lista blanca de administradores o tiene rol admin
   const hasAdminAccess = await getAdminAccess(user.email, user.id);
+  const config = await getSiteConfig();
 
   if (!hasAdminAccess) {
     return (
@@ -30,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             Acceso Restringido
           </h1>
           <p className="text-xs text-ink-muted mb-4 leading-relaxed">
-            El correo <strong className="text-accent font-semibold">{user.email}</strong> no se encuentra en la <strong>lista blanca de administradores</strong> autorizados para la Bodega Dnavits.
+            El correo <strong className="text-accent font-semibold">{user.email}</strong> no se encuentra en la <strong>lista blanca de administradores</strong> autorizados para {config.nombre_bodega || "la Bodega Dnavits"}.
           </p>
           <div className="p-3.5 bg-surface border border-hairline rounded-card text-[11px] text-ink-muted mb-6 text-left space-y-1">
             <p className="flex items-center gap-1.5"><AlertCircleIcon className="w-3.5 h-3.5 text-accent shrink-0" /> <strong>¿Cómo autorizar este correo?</strong></p>
@@ -61,16 +63,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Sidebar Lateral Estilo Shopify en Light Portrait */}
       <aside className="w-full md:w-64 bg-canvas border-b md:border-b-0 md:border-r border-hairline flex flex-col shrink-0">
         {/* Header del Sidebar */}
-        <div className="p-5 border-b border-divider flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-ink flex items-center justify-center text-white font-black shadow-portrait group-hover:bg-ink-light transition-colors">
-              <BeerIcon className="w-4.5 h-4.5 text-white" />
-            </div>
-            <div>
-              <span className="font-inter font-black text-sm text-ink block leading-tight">
-                BODEGA DNAVITS
+        <div className="p-4 sm:p-5 border-b border-divider flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group min-w-0" title="Ir a la tienda">
+            {config.logo_url ? (
+              <div className="w-10 h-10 rounded-xl border border-hairline bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-subtle p-1">
+                <img
+                  src={config.logo_url}
+                  alt={config.nombre_bodega || "Logo"}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center text-white font-black shadow-portrait group-hover:bg-ink-light transition-colors shrink-0">
+                <BeerIcon className="w-5 h-5 text-white" />
+              </div>
+            )}
+            <div className="min-w-0 flex flex-col justify-center">
+              <span className="font-inter font-black text-sm text-ink truncate leading-tight uppercase tracking-tight">
+                {config.nombre_bodega || "BODEGA DNAVITS"}
               </span>
-              <span className="text-[10px] text-accent font-bold uppercase tracking-eyebrow">
+              <span className="text-[10px] text-accent font-bold uppercase tracking-wider leading-tight mt-0.5">
                 Panel Admin
               </span>
             </div>

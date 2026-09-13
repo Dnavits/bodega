@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { PackageIcon, TrendingUpIcon, PlusIcon, BeerIcon } from "@/components/Icons";
+import { getSiteConfig } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
+  const config = await getSiteConfig();
 
   // 1. Contador de productos
   const { count: totalProductos } = await supabase
@@ -48,7 +50,7 @@ export default async function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-eyebrow text-accent">
-            Panel de Control · Bodega Dnavits
+            Panel de Control · {config.nombre_bodega || "Bodega Dnavits"}
           </span>
           <h1 className="font-inter font-black text-2xl sm:text-3xl text-ink mt-1">
             Resumen General de la Bodega
