@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getAdminAccess } from "@/lib/admin-auth";
-import { BeerIcon, ShieldAdminIcon, AlertCircleIcon } from "@/components/Icons";
+import { BeerIcon, ShieldAdminIcon, AlertCircleIcon, StoreIcon } from "@/components/Icons";
 import { AdminNav } from "@/components/AdminNav";
 import { getSiteConfig } from "@/lib/site-config";
 
@@ -93,27 +93,35 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <AdminNav />
 
         {/* Footer del Sidebar con datos del Admin logueado */}
-        <div className="p-4 border-t border-divider bg-surface/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-sky border border-accent/20 text-accent flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                {user.email?.[0] || "A"}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-ink truncate">{user.email}</p>
-                <span className="text-[10px] text-emerald font-semibold uppercase tracking-eyebrow block">
+        <div className="p-3.5 border-t border-divider bg-surface/50 space-y-2.5">
+          {/* Tarjeta del Administrador */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-ink text-white flex items-center justify-center font-bold text-xs uppercase shadow-subtle shrink-0">
+              {user.email?.[0] || "A"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald shrink-0" />
+                <span className="text-[10px] text-emerald font-bold uppercase tracking-wider truncate">
                   Admin Autorizado
                 </span>
               </div>
+              <p className="text-xs font-bold text-ink truncate mt-0.5" title={user.email}>
+                {user.email}
+              </p>
             </div>
-            <Link
-              href="/"
-              title="Ir a la tienda"
-              className="text-xs text-ink-muted hover:text-ink p-1 font-medium"
-            >
-              Tienda ↗
-            </Link>
           </div>
+
+          {/* Botón Ir a la Tienda */}
+          <Link
+            href="/"
+            title="Ir a la tienda principal"
+            className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-btn border border-hairline bg-canvas hover:bg-surface text-xs font-semibold text-ink shadow-subtle transition-all active:scale-95 group"
+          >
+            <StoreIcon className="w-3.5 h-3.5 text-ink-muted group-hover:text-accent transition-colors" />
+            <span>Ver Tienda Online</span>
+            <span className="text-[11px] text-ink-faint group-hover:text-accent group-hover:translate-x-0.5 transition-all">↗</span>
+          </Link>
         </div>
       </aside>
 
