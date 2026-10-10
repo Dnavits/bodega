@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProductCard, ProductoBodega } from "./ProductCard";
-import { BeerIcon } from "@/components/Icons";
+import { BeerIcon, SearchIcon, CloseIcon } from "@/components/Icons";
 import { CATEGORIA_LABELS } from "@/lib/constants";
 
 const SAMPLE_PRODUCTS: ProductoBodega[] = [
@@ -137,10 +137,12 @@ export function Tienda() {
       const catMatch =
         categoriaActiva === "todos" ||
         (p.categoria || "").toLowerCase() === categoriaActiva.toLowerCase();
+      const q = busqueda.toLowerCase();
       const searchMatch =
-        !busqueda ||
-        (p.nombre || "").toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.categoria || "").toLowerCase().includes(busqueda.toLowerCase());
+        !q ||
+        (p.nombre || "").toLowerCase().includes(q) ||
+        (p.categoria || "").toLowerCase().includes(q) ||
+        (p.descripcion || "").toLowerCase().includes(q);
       return catMatch && searchMatch;
     });
   }, [productos, categoriaActiva, busqueda]);
@@ -169,13 +171,28 @@ export function Tienda() {
           </div>
 
           {/* Search */}
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar gaseosa, cerveza, agua..."
-            className="w-full md:w-64 border border-hairline focus:border-accent rounded-input bg-canvas px-4 py-2.5 text-sm text-ink placeholder-ink-faint outline-none shadow-subtle transition-colors"
-          />
+          <div className="relative w-full md:w-72 flex items-center">
+            <span className="absolute left-3 text-ink-faint pointer-events-none">
+              <SearchIcon className="w-4 h-4" />
+            </span>
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar gaseosa, cerveza, agua..."
+              className="w-full border border-hairline focus:border-accent rounded-input bg-canvas pl-9 pr-9 py-2.5 text-sm text-ink placeholder-ink-faint outline-none shadow-subtle transition-colors"
+            />
+            {busqueda && (
+              <button
+                type="button"
+                onClick={() => setBusqueda("")}
+                className="absolute right-3 text-ink-faint hover:text-ink transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <CloseIcon className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Dynamic Category Tabs */}
