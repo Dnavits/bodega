@@ -107,7 +107,7 @@ function ProductModal({
               src={imgError[activeIdx] ? DEFAULT_IMAGE : imagenes[activeIdx]}
               alt={`${producto.nombre} — foto ${activeIdx + 1}`}
               onError={() => setImgError(prev => { const n = [...prev]; n[activeIdx] = true; return n; })}
-              className="w-full h-full object-cover transition-opacity duration-300"
+              className="w-full h-full object-contain p-4 transition-opacity duration-300"
             />
 
             {/* Flechas de navegación (solo si hay más de 1) */}
@@ -148,7 +148,7 @@ function ProductModal({
                   <img
                     src={imgError[i] ? DEFAULT_IMAGE : img}
                     alt={`Miniatura ${i + 1}`}
-                    className="w-full h-full object-cover bg-surface"
+                    className="w-full h-full object-contain p-1 bg-surface"
                     onError={() => setImgError(prev => { const n = [...prev]; n[i] = true; return n; })}
                   />
                 </button>
@@ -333,7 +333,7 @@ export function ProductCard({ producto }: { producto: ProductoBodega }) {
             src={imgSrc}
             alt={producto.nombre}
             onError={() => setImgSrc(DEFAULT_IMAGE)}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
           />
           {/* Overlay sutil al hover */}
           <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors duration-300" />
