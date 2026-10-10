@@ -27,7 +27,9 @@ const formVacio = {
   stock: "",
   categoria: "gaseosas",
   nuevaCategoria: "",
-  imagen_url: "",
+  imagen_url_1: "",
+  imagen_url_2: "",
+  imagen_url_3: "",
   activo: true,
 };
 
@@ -42,7 +44,9 @@ export default function AdminProductos() {
   const [filtroCategoria, setFiltroCategoria] = useState("todas");
   const [esNuevaCategoria, setEsNuevaCategoria] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef1 = useRef<HTMLInputElement>(null);
+  const fileInputRef2 = useRef<HTMLInputElement>(null);
+  const fileInputRef3 = useRef<HTMLInputElement>(null);
   const excelInputRef = useRef<HTMLInputElement>(null);
 
   async function cargar() {
@@ -69,11 +73,11 @@ export default function AdminProductos() {
     return Array.from(set);
   }, [productos]);
 
-  // Manejo de subida de archivo para imagen de producto
-  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+  // Manejo de subida de archivo para imagen de producto (slot 1, 2 o 3)
+  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>, slot: 1 | 2 | 3) {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
       setError('Solo se permiten imágenes JPG, PNG o WebP.');
       return;
@@ -81,8 +85,9 @@ export default function AdminProductos() {
 
     try {
       const processed = await processImageFile(file, IMAGE_SPECS.producto);
-      setForm((prev) => ({ ...prev, imagen_url: processed }));
-      setMensaje("✓ Fotografía procesada con éxito a 800x800 px.");
+      const key = `imagen_url_${slot}` as "imagen_url_1" | "imagen_url_2" | "imagen_url_3";
+      setForm((prev) => ({ ...prev, [key]: processed }));
+      setMensaje(`✓ Foto ${slot} procesada a 800×800 px. Guarda para aplicarla.`);
     } catch (err: any) {
       setError(err.message || "Error al procesar la imagen.");
     }
@@ -277,6 +282,10 @@ export default function AdminProductos() {
 
     setCargando(true);
 
+    const imagenes = [form.imagen_url_1, form.imagen_url_2, form.imagen_url_3]
+      .map((u) => u.trim())
+      .filter(Boolean);
+
     const payload: any = {
       nombre: form.nombre.trim(),
       descripcion: form.descripcion.trim() || null,
@@ -284,7 +293,7 @@ export default function AdminProductos() {
       precio_comparacion: form.precio_comparacion ? parseInt(form.precio_comparacion, 10) : null,
       stock: parseInt(form.stock, 10),
       categoria: categoriaFinal,
-      imagenes: form.imagen_url.trim() ? [form.imagen_url.trim()] : [],
+      imagenes,
       activo: form.activo,
     };
 
@@ -372,7 +381,9 @@ export default function AdminProductos() {
       stock: p.stock.toString(),
       categoria: p.categoria?.toLowerCase() || "gaseosas",
       nuevaCategoria: "",
-      imagen_url: p.imagenes?.[0] || "",
+      imagen_url_1: p.imagenes?.[0] || "",
+      imagen_url_2: p.imagenes?.[1] || "",
+      imagen_url_3: p.imagenes?.[2] || "",
       activo: p.activo ?? true,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -570,65 +581,98 @@ export default function AdminProductos() {
             />
           </div>
 
-          {/* SECCIÓN DE IMAGEN: SUBIR ARCHIVO O PEGAR URL */}
-          <div className="md:col-span-2 p-4 bg-surface border border-hairline rounded-card space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          {/* SECCIÓN DE IMÁGENES: hasta 3 fotos por producto */}
+          <div className="md:col-span-2 p-4 bg-surface border border-hairline rounded-card space-y-4">
+            <div className="flex items-center justify-between">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-eyebrow text-ink">
-                  Fotografía del Producto
+                  Fotografías del Producto
                 </label>
                 <p className="text-[11px] text-accent font-semibold flex items-center gap-1 mt-0.5">
                   <RulerIcon className="w-3.5 h-3.5" />
-                  <span>Medidas recomendadas: {IMAGE_SPECS.producto.recommended}</span>
+                  <span>Hasta 3 fotos · {IMAGE_SPECS.producto.recommended} recomendado</span>
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center gap-1.5 self-start sm:self-auto"
-              >
-                <UploadIcon className="w-3.5 h-3.5" />
-                <span>Seleccionar Archivo</span>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                onChange={handleImageFile}
-                className="hidden"
-              />
             </div>
 
-            <div>
-              <input
-                type="text"
-                placeholder="O pega el enlace URL de la foto (https://...)"
-                value={form.imagen_url}
-                onChange={(e) => setForm({ ...form, imagen_url: e.target.value })}
-                className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-4 py-2.5 text-xs text-ink placeholder-ink-faint outline-none transition-colors"
-              />
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {(
+                [
+                  { slot: 1 as const, ref: fileInputRef1, label: "Foto 1 — Principal", key: "imagen_url_1" as const },
+                  { slot: 2 as const, ref: fileInputRef2, label: "Foto 2", key: "imagen_url_2" as const },
+                  { slot: 3 as const, ref: fileInputRef3, label: "Foto 3", key: "imagen_url_3" as const },
+                ]
+              ).map(({ slot, ref, label, key }) => (
+                <div key={slot} className="flex flex-col gap-2 p-3 bg-canvas border border-hairline rounded-card">
+                  {/* Etiqueta */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-eyebrow text-ink-muted">
+                      {label}
+                    </span>
+                    {slot === 1 && (
+                      <span className="text-[9px] font-bold uppercase tracking-eyebrow bg-accent/10 text-accent px-1.5 py-0.5 rounded-tag">
+                        Requerida
+                      </span>
+                    )}
+                  </div>
 
-            {form.imagen_url && (
-              <div className="flex items-center gap-4 p-3 bg-canvas border border-hairline rounded-card">
-                <img
-                  src={form.imagen_url}
-                  alt="Vista previa"
-                  className="w-16 h-16 rounded-xl object-contain bg-surface border border-hairline p-1"
-                />
-                <div className="text-xs text-ink-muted">
-                  <p className="font-semibold text-emerald">✓ Imagen cargada para este producto</p>
+                  {/* Preview */}
+                  <div className="aspect-square rounded-xl border border-hairline bg-surface flex items-center justify-center overflow-hidden">
+                    {form[key] ? (
+                      <img
+                        src={form[key]}
+                        alt={`Preview foto ${slot}`}
+                        className="w-full h-full object-contain p-1"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1.5 text-ink-faint">
+                        <UploadIcon className="w-6 h-6" />
+                        <span className="text-[10px]">Sin foto</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botón subir */}
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, imagen_url: "" })}
-                    className="text-[11px] text-danger hover:underline mt-0.5"
+                    onClick={() => ref.current?.click()}
+                    className="w-full bg-canvas border border-hairline hover:bg-surface text-ink text-[11px] font-bold py-1.5 rounded-btn shadow-subtle transition-all active:scale-95 flex items-center justify-center gap-1.5"
                   >
-                    Quitar imagen
+                    <UploadIcon className="w-3 h-3" />
+                    <span>Subir archivo</span>
                   </button>
+                  <input
+                    ref={ref}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                    onChange={(e) => handleImageFile(e, slot)}
+                    className="hidden"
+                  />
+
+                  {/* URL manual */}
+                  <input
+                    type="text"
+                    placeholder="O pega URL (https://...)"
+                    value={form[key]}
+                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    className="w-full bg-canvas border border-hairline focus:border-accent rounded-input px-3 py-2 text-[11px] text-ink placeholder-ink-faint outline-none transition-colors"
+                  />
+
+                  {/* Quitar */}
+                  {form[key] && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, [key]: "" })}
+                      className="text-[10px] text-danger hover:underline text-center"
+                    >
+                      Quitar foto {slot}
+                    </button>
+                  )}
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
+
 
           {/* Descripción */}
           <div className="md:col-span-2">

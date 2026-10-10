@@ -429,3 +429,41 @@ export function RefreshCwIcon({ className = "w-5 h-5", style }: IconProps) {
     </svg>
   );
 }
+
+export function ChevronLeftIcon({ className = "w-5 h-5", style }: IconProps) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ className = "w-5 h-5", style }: IconProps) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+export function ImagesIcon({ className = "w-5 h-5", style }: IconProps) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 22H4a2 2 0 0 1-2-2V6" />
+      <path d="m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18" />
+      <circle cx="12" cy="8" r="2" />
+      <rect width="16" height="16" x="6" y="2" rx="2" />
+    </svg>
+  );
+}
+
+export function ExpandIcon({ className = "w-5 h-5", style }: IconProps) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m21 21-6-6m6 6v-4.8m0 4.8h-4.8" />
+      <path d="M3 16.2V21m0 0h4.8M3 21l6-6" />
+      <path d="M21 7.8V3m0 0h-4.8M21 3l-6 6" />
+      <path d="M3 7.8V3m0 0h4.8M3 3l6 6" />
+    </svg>
+  );
+}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useCart } from "@/lib/cart-context";
-import { PlusIcon } from "@/components/Icons";
+import { PlusIcon, CloseIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/Icons";
 import { CATEGORIA_LABELS } from "@/lib/constants";
 
 export type ProductoBodega = {
@@ -38,15 +38,225 @@ function StockBadge({ stock }: { stock: number }) {
   );
 }
 
-export function ProductCard({ producto }: { producto: ProductoBodega }) {
-  const { addItem } = useCart();
-  const [imgSrc, setImgSrc] = useState(producto.imagenes?.[0] || DEFAULT_IMAGE);
-  const [added, setAdded]   = useState(false);
+/* ── Modal de detalle con galería ── */
+function ProductModal({
+  producto,
+  onClose,
+  onAdd,
+  added,
+}: {
+  producto: ProductoBodega;
+  onClose: () => void;
+  onAdd: () => void;
+  added: boolean;
+}) {
+  const imagenes = (producto.imagenes?.filter(Boolean) ?? []);
+  if (imagenes.length === 0) imagenes.push(DEFAULT_IMAGE);
+
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [imgError, setImgError] = useState<boolean[]>(new Array(imagenes.length).fill(false));
 
   const agotado = (producto.stock ?? 0) <= 0;
 
   const catLabel =
-    CATEGORIA_LABELS[producto.categoria.toLowerCase() as keyof typeof CATEGORIA_LABELS] ||
+    CATEGORIA_LABELS[producto.categoria?.toLowerCase() as keyof typeof CATEGORIA_LABELS] ||
+    producto.categoria;
+
+  const prev = useCallback(() => setActiveIdx(i => (i - 1 + imagenes.length) % imagenes.length), [imagenes.length]);
+  const next = useCallback(() => setActiveIdx(i => (i + 1) % imagenes.length), [imagenes.length]);
+
+  // Cerrar con Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && imagenes.length > 1) prev();
+      if (e.key === "ArrowRight" && imagenes.length > 1) next();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose, prev, next, imagenes.length]);
+
+  // Bloquear scroll del body
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={producto.nombre}
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-ink/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-2xl bg-canvas rounded-card shadow-card-hover overflow-hidden animate-fade-in-up flex flex-col sm:flex-row max-h-[90vh]">
+
+        {/* ── Galería izquierda ── */}
+        <div className="relative bg-surface sm:w-[45%] shrink-0 flex flex-col">
+          {/* Imagen principal */}
+          <div className="relative aspect-square overflow-hidden flex items-center justify-center bg-surface">
+            <img
+              src={imgError[activeIdx] ? DEFAULT_IMAGE : imagenes[activeIdx]}
+              alt={`${producto.nombre} — foto ${activeIdx + 1}`}
+              onError={() => setImgError(prev => { const n = [...prev]; n[activeIdx] = true; return n; })}
+              className="w-full h-full object-contain p-4 transition-opacity duration-300"
+            />
+
+            {/* Flechas de navegación (solo si hay más de 1) */}
+            {imagenes.length > 1 && (
+              <>
+                <button
+                  onClick={prev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-canvas/90 border border-hairline shadow-card flex items-center justify-center text-ink hover:bg-surface transition-colors"
+                  aria-label="Foto anterior"
+                >
+                  <ChevronLeftIcon className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={next}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-canvas/90 border border-hairline shadow-card flex items-center justify-center text-ink hover:bg-surface transition-colors"
+                  aria-label="Foto siguiente"
+                >
+                  <ChevronRightIcon className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Thumbnails (solo si hay más de 1 imagen) */}
+          {imagenes.length > 1 && (
+            <div className="flex gap-2 p-3 border-t border-divider justify-center bg-canvas">
+              {imagenes.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveIdx(i)}
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                    i === activeIdx
+                      ? "border-accent shadow-portrait"
+                      : "border-hairline opacity-60 hover:opacity-90"
+                  }`}
+                  aria-label={`Ver foto ${i + 1}`}
+                >
+                  <img
+                    src={imgError[i] ? DEFAULT_IMAGE : img}
+                    alt={`Miniatura ${i + 1}`}
+                    className="w-full h-full object-contain p-0.5 bg-surface"
+                    onError={() => setImgError(prev => { const n = [...prev]; n[i] = true; return n; })}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Info derecha ── */}
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          {/* Header info */}
+          <div className="p-5 sm:p-6 flex-1">
+            {/* Categoría badge */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="bg-sky text-accent text-[10px] font-bold uppercase tracking-eyebrow px-2.5 py-1 rounded-tag">
+                {catLabel}
+              </span>
+              <StockBadge stock={producto.stock} />
+            </div>
+
+            {/* Nombre */}
+            <h2 className="font-inter font-black text-xl sm:text-2xl text-ink leading-tight mb-1">
+              {producto.nombre}
+            </h2>
+
+            {/* Precios */}
+            <div className="flex items-baseline gap-2 mb-4">
+              <span className="font-inter font-black text-2xl text-ink">
+                ${producto.precio.toLocaleString("es-CO")}
+              </span>
+              {producto.precio_comparacion && producto.precio_comparacion > producto.precio && (
+                <span className="text-sm text-ink-faint line-through font-medium">
+                  ${producto.precio_comparacion.toLocaleString("es-CO")}
+                </span>
+              )}
+            </div>
+
+            {/* Descripción */}
+            {producto.descripcion && (
+              <p className="text-sm text-ink-muted leading-relaxed mb-5">
+                {producto.descripcion}
+              </p>
+            )}
+
+            {/* Contador de fotos si hay varias */}
+            {imagenes.length > 1 && (
+              <p className="text-[11px] text-ink-faint mb-3">
+                {imagenes.length} fotos disponibles · usa las flechas para navegar
+              </p>
+            )}
+          </div>
+
+          {/* Footer con CTA */}
+          <div className="p-5 sm:p-6 pt-0 border-t border-divider space-y-2.5">
+            <button
+              type="button"
+              onClick={onAdd}
+              disabled={agotado}
+              className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-btn text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
+                agotado
+                  ? "bg-surface text-ink-faint border border-hairline"
+                  : added
+                  ? "bg-emerald text-white shadow-portrait"
+                  : "bg-ink hover:bg-ink-light text-white shadow-portrait"
+              }`}
+            >
+              {agotado
+                ? "Sin stock disponible"
+                : added
+                ? "¡Agregado al carrito!"
+                : <><PlusIcon className="w-4 h-4" /> Agregar al Carrito</>}
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full text-xs text-ink-faint hover:text-ink transition-colors py-1.5"
+            >
+              Seguir viendo el catálogo
+            </button>
+          </div>
+        </div>
+
+        {/* Botón cerrar */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-canvas border border-hairline shadow-card flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface transition-colors"
+          aria-label="Cerrar"
+        >
+          <CloseIcon className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Tarjeta de producto ── */
+export function ProductCard({ producto }: { producto: ProductoBodega }) {
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const imagenes = producto.imagenes?.filter(Boolean) ?? [];
+  const mainImg = imagenes[0] || DEFAULT_IMAGE;
+  const [imgSrc, setImgSrc] = useState(mainImg);
+
+  const agotado = (producto.stock ?? 0) <= 0;
+  const tieneVariasImagenes = imagenes.length > 1;
+
+  const catLabel =
+    CATEGORIA_LABELS[producto.categoria?.toLowerCase() as keyof typeof CATEGORIA_LABELS] ||
     producto.categoria;
 
   function handleAdd() {
@@ -63,73 +273,111 @@ export function ProductCard({ producto }: { producto: ProductoBodega }) {
   }
 
   return (
-    <article className="group bg-canvas rounded-card border border-hairline shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col min-w-0 overflow-hidden">
-      {/* Image */}
-      <div className="relative aspect-square bg-surface overflow-hidden flex items-center justify-center p-4">
-        <img
-          src={imgSrc}
-          alt={producto.nombre}
-          onError={() => setImgSrc(DEFAULT_IMAGE)}
-          className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
-        />
-        {/* Category */}
-        <div className="absolute top-3 left-3">
-          <span className="bg-canvas/90 backdrop-blur-sm text-ink-muted text-[10px] font-semibold uppercase tracking-eyebrow px-2 py-0.5 rounded-tag border border-hairline">
-            {catLabel}
-          </span>
-        </div>
-        {/* Stock */}
-        <div className="absolute top-3 right-3">
-          <StockBadge stock={producto.stock} />
-        </div>
-      </div>
+    <>
+      <article className="group bg-canvas rounded-card border border-hairline shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col min-w-0 overflow-hidden">
 
-      {/* Body */}
-      <div className="p-4 flex flex-col flex-1 justify-between">
-        <div>
-          <h3 className="font-inter font-semibold text-sm text-ink group-hover:text-accent transition-colors line-clamp-1">
-            {producto.nombre}
-          </h3>
-          {producto.descripcion && (
-            <p className="mt-0.5 text-xs text-ink-faint line-clamp-2 leading-relaxed">
-              {producto.descripcion}
-            </p>
+        {/* ── Imagen (clickeable para abrir modal) ── */}
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="relative aspect-[4/3] bg-surface overflow-hidden flex items-center justify-center focus:outline-none"
+          aria-label={`Ver fotos y detalles de ${producto.nombre}`}
+        >
+          <img
+            src={imgSrc}
+            alt={producto.nombre}
+            onError={() => setImgSrc(DEFAULT_IMAGE)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          {/* Overlay sutil al hover */}
+          <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors duration-300" />
+
+          {/* Badge "múltiples fotos" */}
+          {tieneVariasImagenes && (
+            <span className="absolute bottom-2.5 right-2.5 bg-ink/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-tag flex items-center gap-1">
+              <span className="opacity-80">1/{imagenes.length}</span>
+            </span>
           )}
-        </div>
 
-        {/* Price + CTA */}
-        <div className="mt-4 pt-3 border-t border-divider flex items-center justify-between gap-2">
+          {/* Badge categoría */}
+          <div className="absolute top-3 left-3">
+            <span className="bg-canvas/90 backdrop-blur-sm text-ink-muted text-[10px] font-semibold uppercase tracking-eyebrow px-2 py-0.5 rounded-tag border border-hairline">
+              {catLabel}
+            </span>
+          </div>
+
+          {/* Badge stock */}
+          <div className="absolute top-3 right-3">
+            <StockBadge stock={producto.stock} />
+          </div>
+        </button>
+
+        {/* ── Cuerpo ── */}
+        <div className="p-4 flex flex-col flex-1 justify-between">
           <div>
-            <p className="font-inter font-black text-base text-ink leading-none">
-              ${producto.precio.toLocaleString("es-CO")}
-            </p>
-            {producto.precio_comparacion && producto.precio_comparacion > producto.precio && (
-              <p className="text-xs text-ink-faint line-through mt-0.5">
-                ${producto.precio_comparacion.toLocaleString("es-CO")}
+            <h3 className="font-inter font-semibold text-sm text-ink group-hover:text-accent transition-colors line-clamp-1">
+              {producto.nombre}
+            </h3>
+            {producto.descripcion && (
+              <p className="mt-0.5 text-xs text-ink-faint line-clamp-1 leading-relaxed">
+                {producto.descripcion}
               </p>
             )}
           </div>
 
+          {/* ── Precio + Botón Agregar (estilo de la imagen 3) ── */}
+          <div className="mt-3 pt-3 border-t border-divider flex items-center justify-between gap-2">
+            <div>
+              <p className="font-inter font-black text-base text-ink leading-none">
+                ${producto.precio.toLocaleString("es-CO")}
+              </p>
+              {producto.precio_comparacion && producto.precio_comparacion > producto.precio && (
+                <p className="text-xs text-ink-faint line-through mt-0.5">
+                  ${producto.precio_comparacion.toLocaleString("es-CO")}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={agotado}
+              className={`inline-flex items-center justify-center gap-1 px-3 py-2 rounded-btn text-xs font-bold transition-all active:scale-95 disabled:cursor-not-allowed shrink-0 ${
+                agotado
+                  ? "bg-surface text-ink-faint border border-hairline text-[11px]"
+                  : added
+                  ? "bg-emerald text-white"
+                  : "bg-ink hover:bg-ink-light text-white"
+              }`}
+            >
+              {agotado
+                ? "Agotado"
+                : added
+                ? "¡Listo!"
+                : <><PlusIcon className="w-3 h-3" /> Agregar</>}
+            </button>
+          </div>
+
+          {/* ── Link "Ver fotos & detalles" ── */}
           <button
             type="button"
-            onClick={handleAdd}
-            disabled={agotado}
-            className={`inline-flex items-center justify-center gap-1 px-3 py-2 rounded-btn text-xs font-bold transition-all active:scale-95 disabled:cursor-not-allowed ${
-              agotado
-                ? "bg-surface text-ink-faint border border-hairline text-[11px]"
-                : added
-                ? "bg-emerald text-white"
-                : "bg-ink hover:bg-ink-light text-white"
-            }`}
+            onClick={() => setModalOpen(true)}
+            className="mt-2.5 w-full text-[11px] text-ink-faint hover:text-accent transition-colors font-medium text-center py-1"
           >
-            {agotado
-              ? "Stock no disponible por ahora"
-              : added
-              ? "¡Listo!"
-              : <><PlusIcon className="w-3 h-3" /> Agregar</>}
+            Ver fotos & detalles
           </button>
         </div>
-      </div>
-    </article>
+      </article>
+
+      {/* Modal */}
+      {modalOpen && (
+        <ProductModal
+          producto={producto}
+          onClose={() => setModalOpen(false)}
+          onAdd={() => { handleAdd(); }}
+          added={added}
+        />
+      )}
+    </>
   );
 }
