@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon, DatabaseIcon } from "@/components/Icons";
+import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon, DatabaseIcon, CreditCardIcon, CheckCircleIcon, AlertCircleIcon } from "@/components/Icons";
 
 type WhitelistUser = {
   id: string;
@@ -212,6 +212,8 @@ export default function AdminConfiguracion() {
   const [copiado, setCopiado] = useState(false);
 
   const [configId, setConfigId] = useState<any>(null);
+  const [pasarelaActiva, setPasarelaActiva] = useState(false);
+  const [toggleDelay, setToggleDelay] = useState(false);
 
   async function cargarDatos() {
     try {
@@ -228,6 +230,7 @@ export default function AdminConfiguracion() {
         setDireccionBodega(config.direccion_bodega || "");
         setCostoDomicilio(config.costo_domicilio?.toString() || "5000");
         setPedidoMinimo(config.pedido_minimo?.toString() || "20000");
+        setPasarelaActiva(config.pasarela_activa ?? false);
       }
 
       const { data: whiteData } = await supabase
@@ -299,6 +302,29 @@ export default function AdminConfiguracion() {
     navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 3000);
+  }
+
+  async function togglePasarela() {
+    if (toggleDelay) return;
+    setToggleDelay(true);
+    const nuevoValor = !pasarelaActiva;
+    // Delay de 2s igual que el toggle de WhatsApp flotante
+    setTimeout(async () => {
+      let targetId = configId;
+      if (!targetId) {
+        const { data: cur } = await supabase.from("configuracion").select("id").limit(1).maybeSingle();
+        if (cur) targetId = cur.id;
+      }
+      const { error } = targetId
+        ? await supabase.from("configuracion").update({ pasarela_activa: nuevoValor }).eq("id", targetId)
+        : await supabase.from("configuracion").insert([{ pasarela_activa: nuevoValor }]);
+      if (!error) {
+        setPasarelaActiva(nuevoValor);
+        setMensaje(nuevoValor ? "✓ Pasarela de pago activada." : "Pasarela de pago desactivada.");
+        setTimeout(() => setMensaje(""), 4000);
+      }
+      setToggleDelay(false);
+    }, 2000);
   }
 
   async function agregarAdminWhitelist(e: React.FormEvent) {
@@ -611,6 +637,111 @@ export default function AdminConfiguracion() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* SECCIÓN 3: PASARELA DE PAGO */}
+      <div className="bg-canvas border border-hairline rounded-card p-6 sm:p-8 shadow-card space-y-5">
+        <div className="flex items-center gap-3 border-b border-divider pb-4">
+          <div className="w-10 h-10 rounded-card bg-sky text-accent flex items-center justify-center">
+            <CreditCardIcon className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-inter font-bold text-base text-ink">
+              Pasarela de Pago — Mercado Pago
+            </h2>
+            <p className="text-xs text-ink-muted">
+              Al activar, los botones de compra cobrarán directamente al cliente en lugar de redirigir a WhatsApp.
+            </p>
+          </div>
+        </div>
+
+        {/* Toggle principal */}
+        <div className="flex items-center justify-between p-4 bg-surface border border-hairline rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className={`w-2.5 h-2.5 rounded-full ${pasarelaActiva ? "bg-emerald animate-pulse" : "bg-ink-faint"}`} />
+            <div>
+              <p className="text-sm font-bold text-ink">
+                {toggleDelay ? "Actualizando..." : pasarelaActiva ? "Pasarela Activa" : "Pasarela Inactiva"}
+              </p>
+              <p className="text-[11px] text-ink-muted">
+                {pasarelaActiva
+                  ? "Los clientes pagan directamente con Mercado Pago"
+                  : "Los clientes son redirigidos a WhatsApp para coordinar el pago"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={togglePasarela}
+            disabled={toggleDelay}
+            className={`relative w-12 h-6 rounded-full transition-all duration-300 disabled:opacity-60 focus:outline-none ${
+              pasarelaActiva ? "bg-emerald" : "bg-ink-faint"
+            }`}
+            aria-label={pasarelaActiva ? "Desactivar pasarela" : "Activar pasarela"}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-portrait transition-transform duration-300 ${
+                pasarelaActiva ? "translate-x-6" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Info de configuración del token */}
+        <div className="rounded-xl border border-hairline bg-surface p-4 space-y-3">
+          <div className="flex items-start gap-2.5">
+            <AlertCircleIcon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs text-ink-muted">
+              <p className="font-bold text-ink">Configuración del Access Token (MP)</p>
+              <p>
+                El token de Mercado Pago <strong>nunca se guarda en la base de datos</strong> por seguridad.
+                Debes configurarlo como variable de entorno en tu servidor.
+              </p>
+            </div>
+          </div>
+
+          <div className="divide-y divide-divider text-xs">
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-ink-muted">Variable en Vercel</span>
+              <code className="font-mono font-bold text-accent bg-sky px-2 py-0.5 rounded-tag">
+                MP_ACCESS_TOKEN
+              </code>
+            </div>
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-ink-muted">Variable en .env.local</span>
+              <code className="font-mono font-bold text-ink-muted bg-canvas border border-hairline px-2 py-0.5 rounded-tag text-[10px]">
+                MP_ACCESS_TOKEN=APP_USR-xxxx
+              </code>
+            </div>
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-ink-muted">Webhook URL para Mercado Pago</span>
+              <code className="font-mono text-[10px] text-ink-muted">
+                {typeof window !== "undefined" ? window.location.origin : ""}/api/payments/webhook
+              </code>
+            </div>
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-ink-muted">Token detectado en servidor</span>
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-tag ${
+                // No podemos saber esto desde el cliente, mostramos ayuda
+                "bg-warning-soft text-warning"
+              }`}>
+                Verificar en Vercel
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* SQL migration reminder */}
+        <div className="flex items-start gap-2.5 p-3 bg-sky/50 border border-accent/20 rounded-xl">
+          <CheckCircleIcon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+          <p className="text-xs text-ink-muted">
+            <strong className="text-ink">Importante:</strong> Antes de activar, ejecuta el script{" "}
+            <code className="font-mono bg-canvas border border-hairline px-1 rounded text-[10px]">
+              supabase/migration_payments.sql
+            </code>{" "}
+            en tu Supabase SQL Editor para habilitar las columnas necesarias de seguimiento de pagos.
+          </p>
         </div>
       </div>
     </div>

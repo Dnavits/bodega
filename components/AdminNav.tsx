@@ -7,6 +7,8 @@ import {
   PackageIcon,
   PaletteIcon,
   SettingsIcon,
+  ClipboardListIcon,
+  CreditCardIcon,
 } from "@/components/Icons";
 
 const navItems = [
@@ -15,6 +17,12 @@ const navItems = [
     label: "Dashboard",
     icon: TrendingUpIcon,
     exact: true,
+  },
+  {
+    href: "/admin/pedidos",
+    label: "Pedidos",
+    icon: ClipboardListIcon,
+    exact: false,
   },
   {
     href: "/admin/productos",
