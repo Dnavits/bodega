@@ -91,22 +91,23 @@ function ProductModal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-ink/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-2xl bg-canvas rounded-card shadow-card-hover overflow-hidden animate-fade-in-up flex flex-col sm:flex-row max-h-[90vh]">
+      <div className="relative z-10 w-full max-w-2xl bg-canvas rounded-2xl shadow-card-hover overflow-hidden flex flex-col sm:flex-row max-h-[92vh]">
 
         {/* ── Galería izquierda ── */}
-        <div className="relative bg-surface sm:w-[45%] shrink-0 flex flex-col">
-          {/* Imagen principal */}
-          <div className="relative aspect-square overflow-hidden flex items-center justify-center bg-surface">
+        <div className="bg-surface sm:w-[44%] shrink-0 flex flex-col p-4 gap-3">
+
+          {/* Imagen principal con bordes redondeados */}
+          <div className="relative rounded-2xl overflow-hidden aspect-square bg-canvas border border-hairline flex items-center justify-center">
             <img
               src={imgError[activeIdx] ? DEFAULT_IMAGE : imagenes[activeIdx]}
               alt={`${producto.nombre} — foto ${activeIdx + 1}`}
               onError={() => setImgError(prev => { const n = [...prev]; n[activeIdx] = true; return n; })}
-              className="w-full h-full object-contain p-4 transition-opacity duration-300"
+              className="w-full h-full object-cover transition-opacity duration-300"
             />
 
             {/* Flechas de navegación (solo si hay más de 1) */}
@@ -130,24 +131,24 @@ function ProductModal({
             )}
           </div>
 
-          {/* Thumbnails (solo si hay más de 1 imagen) */}
+          {/* Thumbnails */}
           {imagenes.length > 1 && (
-            <div className="flex gap-2 p-3 border-t border-divider justify-center bg-canvas">
+            <div className="flex gap-2 justify-center">
               {imagenes.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveIdx(i)}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                  className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
                     i === activeIdx
                       ? "border-accent shadow-portrait"
-                      : "border-hairline opacity-60 hover:opacity-90"
+                      : "border-hairline opacity-55 hover:opacity-100"
                   }`}
                   aria-label={`Ver foto ${i + 1}`}
                 >
                   <img
                     src={imgError[i] ? DEFAULT_IMAGE : img}
                     alt={`Miniatura ${i + 1}`}
-                    className="w-full h-full object-contain p-0.5 bg-surface"
+                    className="w-full h-full object-cover bg-surface"
                     onError={() => setImgError(prev => { const n = [...prev]; n[i] = true; return n; })}
                   />
                 </button>
@@ -158,23 +159,28 @@ function ProductModal({
 
         {/* ── Info derecha ── */}
         <div className="flex flex-col flex-1 overflow-y-auto">
-          {/* Header info */}
-          <div className="p-5 sm:p-6 flex-1">
-            {/* Categoría badge */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="bg-sky text-accent text-[10px] font-bold uppercase tracking-eyebrow px-2.5 py-1 rounded-tag">
-                {catLabel}
-              </span>
-              <StockBadge stock={producto.stock} />
-            </div>
 
-            {/* Nombre */}
-            <h2 className="font-inter font-black text-xl sm:text-2xl text-ink leading-tight mb-1">
+          {/* Categoría + Stock */}
+          <div className="px-6 pt-6 pb-0 flex items-center gap-2 flex-wrap">
+            <span className="bg-sky text-accent text-[10px] font-bold uppercase tracking-eyebrow px-2.5 py-1 rounded-tag">
+              {catLabel}
+            </span>
+            <span className="text-ink-faint text-xs">·</span>
+            <StockBadge stock={producto.stock} />
+            {imagenes.length > 1 && (
+              <>
+                <span className="text-ink-faint text-xs">·</span>
+                <span className="text-[10px] text-ink-faint font-medium">{imagenes.length} fotos</span>
+              </>
+            )}
+          </div>
+
+          {/* Nombre + Precio */}
+          <div className="px-6 pt-3 pb-4 border-b border-divider">
+            <h2 className="font-inter font-black text-xl sm:text-[22px] text-ink leading-tight mb-3">
               {producto.nombre}
             </h2>
-
-            {/* Precios */}
-            <div className="flex items-baseline gap-2 mb-4">
+            <div className="flex items-baseline gap-2.5">
               <span className="font-inter font-black text-2xl text-ink">
                 ${producto.precio.toLocaleString("es-CO")}
               </span>
@@ -183,30 +189,69 @@ function ProductModal({
                   ${producto.precio_comparacion.toLocaleString("es-CO")}
                 </span>
               )}
+              {producto.precio_comparacion && producto.precio_comparacion > producto.precio && (
+                <span className="text-[11px] font-bold text-emerald bg-mint px-2 py-0.5 rounded-tag">
+                  {Math.round((1 - producto.precio / producto.precio_comparacion) * 100)}% OFF
+                </span>
+              )}
             </div>
-
-            {/* Descripción */}
-            {producto.descripcion && (
-              <p className="text-sm text-ink-muted leading-relaxed mb-5">
-                {producto.descripcion}
-              </p>
-            )}
-
-            {/* Contador de fotos si hay varias */}
-            {imagenes.length > 1 && (
-              <p className="text-[11px] text-ink-faint mb-3">
-                {imagenes.length} fotos disponibles · usa las flechas para navegar
-              </p>
-            )}
           </div>
 
-          {/* Footer con CTA */}
-          <div className="p-5 sm:p-6 pt-0 border-t border-divider space-y-2.5">
+          {/* Descripción */}
+          {producto.descripcion && (
+            <div className="px-6 py-4 border-b border-divider">
+              <p className="text-sm text-ink-muted leading-relaxed">
+                {producto.descripcion}
+              </p>
+            </div>
+          )}
+
+          {/* Block de detalles del producto (stock info) */}
+          <div className="px-6 py-4 flex-1">
+            <div className="rounded-xl border border-hairline bg-surface divide-y divide-divider overflow-hidden">
+              {producto.stock > 0 && (
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <span className="w-5 h-5 rounded-full bg-emerald/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald block" />
+                  </span>
+                  <p className="text-xs text-ink-muted leading-relaxed">
+                    <strong className="text-ink">Stock disponible:</strong>{" "}
+                    {producto.stock <= 10
+                      ? `Últimas ${producto.stock} unidades disponibles.`
+                      : `${producto.stock} unidades en inventario.`}
+                  </p>
+                </div>
+              )}
+              <div className="flex items-start gap-3 px-4 py-3">
+                <span className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-accent block" />
+                </span>
+                <p className="text-xs text-ink-muted leading-relaxed">
+                  <strong className="text-ink">Categoría:</strong>{" "}
+                  {catLabel}
+                </p>
+              </div>
+              {producto.precio_comparacion && producto.precio_comparacion > producto.precio && (
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <span className="w-5 h-5 rounded-full bg-warning/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-warning block" />
+                  </span>
+                  <p className="text-xs text-ink-muted leading-relaxed">
+                    <strong className="text-ink">Precio especial:</strong>{" "}
+                    Ahorra ${(producto.precio_comparacion - producto.precio).toLocaleString("es-CO")} en este producto.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer CTA */}
+          <div className="px-6 pb-6 pt-2 space-y-2 border-t border-divider">
             <button
               type="button"
               onClick={onAdd}
               disabled={agotado}
-              className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-btn text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
+              className={`w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed ${
                 agotado
                   ? "bg-surface text-ink-faint border border-hairline"
                   : added
@@ -222,7 +267,7 @@ function ProductModal({
             </button>
             <button
               onClick={onClose}
-              className="w-full text-xs text-ink-faint hover:text-ink transition-colors py-1.5"
+              className="w-full text-xs text-ink-faint hover:text-ink transition-colors py-1"
             >
               Seguir viendo el catálogo
             </button>
@@ -232,13 +277,14 @@ function ProductModal({
         {/* Botón cerrar */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-canvas border border-hairline shadow-card flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface transition-colors"
+          className="absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full bg-canvas border border-hairline shadow-card flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface transition-colors"
           aria-label="Cerrar"
         >
           <CloseIcon className="w-4 h-4" />
         </button>
       </div>
     </div>
+
   );
 }
 
