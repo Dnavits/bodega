@@ -66,9 +66,16 @@ export default function PagoStatusPage() {
   }, [countdown, status, router]);
 
   // Verificar y crear el pedido via Server Action (privado, no es un endpoint público)
+  const [verifyLog, setVerifyLog] = useState<string>("");
   useEffect(() => {
-    if (status !== "exitoso" || !paymentId) return;
-    verificarPago(paymentId).catch(() => {});
+    if (status !== "exitoso" || !paymentId) {
+      setVerifyLog(`Sin payment_id en URL. status=${status} paymentId=${paymentId}`);
+      return;
+    }
+    setVerifyLog(`Verificando pago ${paymentId}...`);
+    verificarPago(paymentId)
+      .then((res) => setVerifyLog(`Resultado: ok=${res.ok} created=${res.created}`))
+      .catch((err) => setVerifyLog(`Error: ${err?.message || String(err)}`));
   }, [status, paymentId]);
 
   return (
@@ -139,6 +146,13 @@ export default function PagoStatusPage() {
         <p className="text-[10px] text-ink-faint mt-5">
           ¿Problemas? Escríbenos por WhatsApp con tu ID de pago.
         </p>
+
+        {/* DEBUG TEMPORAL — borrar después */}
+        {verifyLog && (
+          <p className="text-[9px] font-mono text-ink-faint mt-3 break-all bg-surface rounded p-2">
+            {verifyLog}
+          </p>
+        )}
       </div>
     </div>
   );
