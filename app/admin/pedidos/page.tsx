@@ -129,6 +129,13 @@ export default function AdminPedidos() {
   const [borrando, setBorrando] = useState<string | null>(null);
   const [confirmBorrar, setConfirmBorrar] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState("");
+  const [mensajeTipo, setMensajeTipo] = useState<"ok" | "warn">("ok");
+
+  function mostrarMensaje(texto: string, tipo: "ok" | "warn" = "ok") {
+    setMensaje(texto);
+    setMensajeTipo(tipo);
+    setTimeout(() => setMensaje(""), 3000);
+  }
 
   const cargar = useCallback(async () => {
     const supabase = createClient();
@@ -168,8 +175,7 @@ export default function AdminPedidos() {
         setPedidos((prev) =>
           prev.map((p) => (p.id === pedidoId ? { ...p, estado: nuevoEstado as Pedido["estado"] } : p))
         );
-        setMensaje("Estado actualizado correctamente.");
-        setTimeout(() => setMensaje(""), 3000);
+        mostrarMensaje("Estado actualizado correctamente.");
       }
     } finally {
       setActualizando(null);
@@ -182,8 +188,7 @@ export default function AdminPedidos() {
       const res = await fetch(`/api/pedidos/${pedidoId}`, { method: "DELETE" });
       if (res.ok) {
         setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
-        setMensaje("Pedido eliminado.");
-        setTimeout(() => setMensaje(""), 3000);
+        mostrarMensaje("Pedido eliminado.");
       }
     } finally {
       setBorrando(null);
@@ -243,7 +248,11 @@ export default function AdminPedidos() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Descargar mes vigente */}
           <button
-            onClick={() => descargarExcel(pedidosMesVigente(), `pedidos-${nombreMesVigente()}`)}
+            onClick={() => {
+              const data = pedidosMesVigente();
+              if (data.length === 0) { mostrarMensaje(`Sin pedidos en ${nombreMesVigente()}.`, "warn"); return; }
+              descargarExcel(data, `pedidos-${nombreMesVigente()}`);
+            }}
             title={`Descargar pedidos de ${nombreMesVigente()}`}
             className="inline-flex items-center gap-1.5 bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2.5 rounded-btn shadow-subtle transition-all active:scale-95"
           >
@@ -252,7 +261,11 @@ export default function AdminPedidos() {
           </button>
           {/* Descargar mes anterior */}
           <button
-            onClick={() => descargarExcel(pedidosMesAnterior(), `pedidos-${nombreMesAnterior()}`)}
+            onClick={() => {
+              const data = pedidosMesAnterior();
+              if (data.length === 0) { mostrarMensaje(`Sin pedidos en ${nombreMesAnterior()}.`, "warn"); return; }
+              descargarExcel(data, `pedidos-${nombreMesAnterior()}`);
+            }}
             title={`Descargar pedidos de ${nombreMesAnterior()}`}
             className="inline-flex items-center gap-1.5 bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2.5 rounded-btn shadow-subtle transition-all active:scale-95"
           >
@@ -273,8 +286,14 @@ export default function AdminPedidos() {
 
       {/* Mensaje */}
       {mensaje && (
-        <div className="bg-mint border border-emerald/20 text-emerald text-xs font-semibold px-4 py-3 rounded-card flex items-center gap-2">
-          <CheckCircleIcon className="w-4 h-4" />
+        <div className={`text-xs font-semibold px-4 py-3 rounded-card flex items-center gap-2 border ${
+          mensajeTipo === "warn"
+            ? "bg-warning-soft border-warning/20 text-warning"
+            : "bg-mint border-emerald/20 text-emerald"
+        }`}>
+          {mensajeTipo === "warn"
+            ? <AlertCircleIcon className="w-4 h-4" />
+            : <CheckCircleIcon className="w-4 h-4" />}
           {mensaje}
         </div>
       )}
