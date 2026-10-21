@@ -74,7 +74,7 @@ export default function PagoStatusPage() {
     }
     setVerifyLog(`Verificando pago ${paymentId}...`);
     verificarPago(paymentId)
-      .then((res) => setVerifyLog(`Resultado: ok=${res.ok} created=${res.created}`))
+      .then((res) => setVerifyLog(`Resultado: ok=${res.ok} created=${res.created} debug=${res.debug ?? "none"}`))
       .catch((err) => setVerifyLog(`Error: ${err?.message || String(err)}`));
   }, [status, paymentId]);
 

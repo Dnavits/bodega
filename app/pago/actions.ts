@@ -3,10 +3,11 @@
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { createServiceClient } from "@/lib/supabase/server";
 
-export async function verificarPago(paymentId: string): Promise<{ ok: boolean; created: boolean }> {
+export async function verificarPago(paymentId: string): Promise<{ ok: boolean; created: boolean; debug?: string }> {
   try {
     const accessToken = process.env.MP_ACCESS_TOKEN;
-    if (!accessToken || !paymentId) return { ok: false, created: false };
+    if (!accessToken) return { ok: false, created: false, debug: "NO_TOKEN" };
+    if (!paymentId) return { ok: false, created: false, debug: "NO_PAYMENT_ID" };
 
     const mp = new MercadoPagoConfig({ accessToken });
     const paymentClient = new Payment(mp);
@@ -14,12 +15,12 @@ export async function verificarPago(paymentId: string): Promise<{ ok: boolean; c
     let paymentData: any;
     try {
       paymentData = await paymentClient.get({ id: parseInt(paymentId) });
-    } catch {
-      return { ok: false, created: false };
+    } catch (e: any) {
+      return { ok: false, created: false, debug: `MP_GET_FAILED: ${e?.message || String(e)}` };
     }
 
     const mpStatus = paymentData.status;
-    const mpPaymentId = paymentData.id?.toString();
+    if (mpStatus !== "approved") return { ok: true, created: false, debug: `STATUS_${mpStatus}` };
     const mpPreferenceId = paymentData.preference_id;
     const metadata = paymentData.metadata || {};
     const totalAmount = paymentData.transaction_amount;
@@ -80,7 +81,7 @@ export async function verificarPago(paymentId: string): Promise<{ ok: boolean; c
       .select()
       .single();
 
-    if (error || !pedido) return { ok: false, created: false };
+    if (error || !pedido) return { ok: false, created: false, debug: `DB_INSERT_FAILED: ${error?.message}` };
 
     // Items y stock
     if (itemsValidados.length > 0) {
@@ -94,7 +95,7 @@ export async function verificarPago(paymentId: string): Promise<{ ok: boolean; c
     }
 
     return { ok: true, created: true };
-  } catch {
-    return { ok: false, created: false };
+  } catch (e: any) {
+    return { ok: false, created: false, debug: `CATCH: ${e?.message || String(e)}` };
   }
 }
