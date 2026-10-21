@@ -20,6 +20,7 @@ export async function verificarPago(paymentId: string): Promise<{ ok: boolean; c
     }
 
     const mpStatus = paymentData.status;
+    const mpPaymentId = paymentData.id?.toString();
     if (mpStatus !== "approved") return { ok: true, created: false, debug: `STATUS_${mpStatus}` };
     const mpPreferenceId = paymentData.preference_id;
     const metadata = paymentData.metadata || {};
