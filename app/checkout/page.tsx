@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
-import { BeerIcon, WhatsAppIcon, CheckIcon } from "@/components/Icons";
+import { BeerIcon, WhatsAppIcon, CheckIcon, CreditCardIcon } from "@/components/Icons";
 import { WHATSAPP_NUMBER } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -30,6 +30,7 @@ export default function CheckoutPage() {
     nombre: "Bodega Dnavits",
     whatsapp: WHATSAPP_NUMBER,
   });
+  const [pasarelaActiva, setPasarelaActiva] = useState(false);
 
   const [errores, setErrores] = useState<Record<string, string>>({});
 
@@ -39,7 +40,7 @@ export default function CheckoutPage() {
         const supabase = createClient();
         const { data } = await supabase
           .from("configuracion")
-          .select("nombre_bodega, whatsapp_pedidos")
+          .select("nombre_bodega, whatsapp_pedidos, pasarela_activa")
           .limit(1)
           .maybeSingle();
 
@@ -48,6 +49,7 @@ export default function CheckoutPage() {
             nombre: data.nombre_bodega?.trim() || "Bodega Dnavits",
             whatsapp: data.whatsapp_pedidos?.trim() || WHATSAPP_NUMBER,
           });
+          setPasarelaActiva(data.pasarela_activa ?? false);
         }
       } catch (err) {
         console.error("Error al cargar configuración de bodega en checkout:", err);
@@ -127,20 +129,54 @@ export default function CheckoutPage() {
 
     setCargando(true);
 
+    const datosEntrega = {
+      nombre: nombre.trim(),
+      telefono: telefono.trim(),
+      email: email.trim() || null,
+      texto: direccion.trim(),
+      barrio: barrio.trim(),
+      ciudad: "Medellín",
+    };
+
     try {
+      // ── RUTA A: Pasarela de Pago (Mercado Pago) ──
+      if (pasarelaActiva) {
+        const res = await fetch("/api/payments/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items,
+            direccion: datosEntrega,
+            notas: notas.trim() || null,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "No se pudo crear la preferencia de pago.");
+        }
+
+        // Redirigir a la página de pago de Mercado Pago
+        const mpUrl = process.env.NODE_ENV === "production"
+          ? data.initPoint
+          : (data.sandboxInitPoint || data.initPoint);
+
+        if (mpUrl) {
+          window.location.href = mpUrl;
+        } else {
+          throw new Error("No se obtuvo la URL de pago de Mercado Pago.");
+        }
+        return;
+      }
+
+      // ── RUTA B: Flujo WhatsApp (checkout tradicional) ──
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items,
-          direccion: {
-            nombre: nombre.trim(),
-            telefono: telefono.trim(),
-            email: email.trim() || null,
-            texto: direccion.trim(),
-            barrio: barrio.trim(),
-            ciudad: "Medellín",
-          },
+          direccion: datosEntrega,
           metodo_pago: metodoPago,
           notas: notas.trim() || null,
         }),
@@ -356,27 +392,41 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
-                Método de Pago
-              </label>
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                {(["efectivo", "nequi", "transferencia"] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMetodoPago(m)}
-                    className={`py-2 px-2 text-xs font-bold rounded-btn border capitalize transition-all ${
-                      metodoPago === m
-                        ? "bg-ink text-white border-ink shadow-portrait"
-                        : "bg-canvas text-ink-muted border-hairline hover:bg-surface"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
+            {pasarelaActiva ? (
+              <div className="flex items-center gap-3 p-3.5 bg-sky/60 border border-accent/20 rounded-card">
+                <div className="w-8 h-8 rounded-btn bg-accent/10 flex items-center justify-center flex-shrink-0">
+                  <CreditCardIcon className="w-4 h-4 text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-ink">Pago con Mercado Pago</p>
+                  <p className="text-[11px] text-ink-muted leading-tight mt-0.5">
+                    Serás redirigido a Mercado Pago para completar el pago de forma segura.
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
+                  Método de Pago
+                </label>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {(["efectivo", "nequi", "transferencia"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMetodoPago(m)}
+                      className={`py-2 px-2 text-xs font-bold rounded-btn border capitalize transition-all ${
+                        metodoPago === m
+                          ? "bg-ink text-white border-ink shadow-portrait"
+                          : "bg-canvas text-ink-muted border-hairline hover:bg-surface"
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-eyebrow text-ink-muted mb-1">
@@ -401,9 +451,20 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={cargando}
-              className="w-full mt-4 flex items-center justify-center gap-2 bg-ink hover:bg-ink-light text-white font-bold py-3.5 rounded-btn shadow-portrait transition-all active:scale-95 text-sm disabled:opacity-60"
+              className={`w-full mt-4 flex items-center justify-center gap-2 font-bold py-3.5 rounded-btn shadow-portrait transition-all active:scale-95 text-sm disabled:opacity-60 ${
+                pasarelaActiva
+                  ? "bg-[#009EE3] hover:bg-[#0084c8] text-white"
+                  : "bg-ink hover:bg-ink-light text-white"
+              }`}
             >
-              <span>{cargando ? "Registrando Pedido..." : "Confirmar y Guardar Pedido"}</span>
+              {pasarelaActiva ? (
+                <>
+                  <CreditCardIcon className="w-4 h-4" />
+                  <span>{cargando ? "Redirigiendo a Mercado Pago..." : "Pagar con Mercado Pago"}</span>
+                </>
+              ) : (
+                <span>{cargando ? "Registrando Pedido..." : "Confirmar y Guardar Pedido"}</span>
+              )}
             </button>
           </form>
 
