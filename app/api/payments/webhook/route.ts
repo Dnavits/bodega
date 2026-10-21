@@ -4,11 +4,55 @@ import { createServiceClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+// Verifica la firma HMAC que Mercado Pago envía en cada notificación.
+// Requiere la variable MP_WEBHOOK_SECRET (Mercado Pago → Webhooks → secret).
+// Si no está configurada, se omite la verificación (modo desarrollo).
+async function verificarFirmaMP(request: Request, rawBody: string): Promise<boolean> {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) return true; // Sin secret configurado, se permite (sandbox/dev)
+
+  const xSignature = request.headers.get("x-signature");
+  const xRequestId = request.headers.get("x-request-id");
+  if (!xSignature || !xRequestId) return false;
+
+  const { searchParams } = new URL(request.url);
+  const dataId = searchParams.get("data.id") || searchParams.get("id") || "";
+
+  // MP firma: "id:{dataId};request-id:{xRequestId};"
+  const manifest = `id:${dataId};request-id:${xRequestId};`;
+
+  // Extraer ts y v1 del header x-signature: "ts=....,v1=...."
+  const parts = Object.fromEntries(xSignature.split(",").map((p) => p.split("=")));
+  const ts = parts["ts"];
+  const v1 = parts["v1"];
+  if (!ts || !v1) return false;
+
+  const signedManifest = `${manifest}${ts}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(signedManifest));
+  const computed = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+
+  return computed === v1;
+}
+
 export async function POST(request: Request) {
   try {
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
       return NextResponse.json({ error: "No configurado" }, { status: 503 });
+    }
+
+    // Leer body antes de consumirlo (necesario para verificar firma)
+    const rawBody = await request.text();
+
+    // Verificar firma HMAC de Mercado Pago
+    const firmaValida = await verificarFirmaMP(request, rawBody);
+    if (!firmaValida) {
+      console.warn("[Webhook] Firma inválida — solicitud rechazada");
+      return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
     }
 
     // Mercado Pago envía los datos en la query string
