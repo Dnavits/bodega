@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import * as XLSX from "xlsx";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -11,6 +12,8 @@ import {
   CreditCardIcon,
   WhatsappIcon,
   CashIcon,
+  TrashIcon,
+  DownloadIcon,
 } from "@/components/Icons";
 
 type Pedido = {
@@ -89,11 +92,42 @@ function MetodoBadge({ metodo }: { metodo?: string }) {
   );
 }
 
+function descargarExcel(pedidos: Pedido[], nombreArchivo: string) {
+  const filas = pedidos.map((p) => ({
+    "Orden": p.numero_orden_seq ? `#${p.numero_orden_seq}` : `#${p.id.slice(0, 6).toUpperCase()}`,
+    "Fecha": new Date(p.created_at).toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+    "Estado": p.estado.replace("_", " ").toUpperCase(),
+    "Cliente": p.nombre,
+    "Teléfono": p.telefono,
+    "Email": p.email || "",
+    "Dirección": `${p.direccion}${p.detalle_direccion ? `, ${p.detalle_direccion}` : ""} · ${p.barrio}${p.ciudad ? `, ${p.ciudad}` : ""}`,
+    "Total ($)": p.total,
+    "Método de Pago": p.metodo_pago || "",
+    "ID Transacción": p.transaction_id || "",
+    "Notas": p.notas || "",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(filas);
+  const wb = XLSX.utils.book_new();
+
+  // Ancho de columnas
+  ws["!cols"] = [
+    { wch: 10 }, { wch: 18 }, { wch: 12 }, { wch: 22 }, { wch: 14 },
+    { wch: 22 }, { wch: 40 }, { wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 30 },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "Pedidos");
+  XLSX.writeFile(wb, `${nombreArchivo}.xlsx`);
+}
+
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
   const [actualizando, setActualizando] = useState<string | null>(null);
+  const [borrando, setBorrando] = useState<string | null>(null);
+  const [confirmBorrar, setConfirmBorrar] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState("");
 
   const cargar = useCallback(async () => {
@@ -106,9 +140,14 @@ export default function AdminPedidos() {
     setCargando(false);
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await cargar();
+    setRefreshing(false);
+  }, [cargar]);
+
   useEffect(() => {
     cargar();
-    // Suscripción realtime
     const supabase = createClient();
     const channel = supabase
       .channel("pedidos_admin")
@@ -137,6 +176,48 @@ export default function AdminPedidos() {
     }
   }
 
+  async function borrarPedido(pedidoId: string) {
+    setBorrando(pedidoId);
+    try {
+      const res = await fetch(`/api/pedidos/${pedidoId}`, { method: "DELETE" });
+      if (res.ok) {
+        setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
+        setMensaje("Pedido eliminado.");
+        setTimeout(() => setMensaje(""), 3000);
+      }
+    } finally {
+      setBorrando(null);
+      setConfirmBorrar(null);
+    }
+  }
+
+  // ── Filtros de Excel por mes ──
+  function pedidosMesVigente() {
+    const hoy = new Date();
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    return pedidos.filter((p) => new Date(p.created_at) >= inicio);
+  }
+
+  function pedidosMesAnterior() {
+    const hoy = new Date();
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    return pedidos.filter((p) => {
+      const d = new Date(p.created_at);
+      return d >= inicio && d < fin;
+    });
+  }
+
+  function nombreMesVigente() {
+    return new Date().toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+  }
+
+  function nombreMesAnterior() {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+  }
+
   const pedidosFiltrados = pedidos.filter((p) =>
     filtroEstado === "todos" ? true : p.estado === filtroEstado
   );
@@ -159,13 +240,35 @@ export default function AdminPedidos() {
             Pedidos Recibidos
           </h1>
         </div>
-        <button
-          onClick={cargar}
-          className="inline-flex items-center gap-2 bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-4 py-2.5 rounded-btn shadow-subtle transition-all active:scale-95"
-        >
-          <RefreshCwIcon className="w-3.5 h-3.5" />
-          Actualizar
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Descargar mes vigente */}
+          <button
+            onClick={() => descargarExcel(pedidosMesVigente(), `pedidos-${nombreMesVigente()}`)}
+            title={`Descargar pedidos de ${nombreMesVigente()}`}
+            className="inline-flex items-center gap-1.5 bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2.5 rounded-btn shadow-subtle transition-all active:scale-95"
+          >
+            <DownloadIcon className="w-3.5 h-3.5 text-emerald" />
+            Mes vigente
+          </button>
+          {/* Descargar mes anterior */}
+          <button
+            onClick={() => descargarExcel(pedidosMesAnterior(), `pedidos-${nombreMesAnterior()}`)}
+            title={`Descargar pedidos de ${nombreMesAnterior()}`}
+            className="inline-flex items-center gap-1.5 bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3.5 py-2.5 rounded-btn shadow-subtle transition-all active:scale-95"
+          >
+            <DownloadIcon className="w-3.5 h-3.5 text-ink-muted" />
+            Mes anterior
+          </button>
+          {/* Actualizar */}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-4 py-2.5 rounded-btn shadow-subtle transition-all active:scale-95 disabled:opacity-60"
+          >
+            <RefreshCwIcon className={`w-3.5 h-3.5 transition-transform ${refreshing ? "animate-spin" : ""}`} />
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {/* Mensaje */}
@@ -299,7 +402,7 @@ export default function AdminPedidos() {
                   )}
                 </div>
 
-                {/* Panel derecho: Total + cambiar estado */}
+                {/* Panel derecho: Total + cambiar estado + borrar */}
                 <div className="flex flex-col items-end gap-3 shrink-0">
                   <p className="font-inter font-black text-xl text-ink">
                     ${p.total.toLocaleString("es-CO")}
@@ -330,6 +433,34 @@ export default function AdminPedidos() {
                       })}
                     </div>
                   </div>
+
+                  {/* Borrar pedido */}
+                  {confirmBorrar === p.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-danger font-semibold">¿Confirmar?</span>
+                      <button
+                        onClick={() => borrarPedido(p.id)}
+                        disabled={borrando === p.id}
+                        className="px-2.5 py-1 rounded-btn text-[10px] font-bold bg-danger text-white hover:bg-danger/80 transition-all disabled:opacity-50"
+                      >
+                        {borrando === p.id ? "..." : "Sí, borrar"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmBorrar(null)}
+                        className="px-2.5 py-1 rounded-btn text-[10px] font-bold bg-canvas border border-hairline text-ink-muted hover:bg-surface transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmBorrar(p.id)}
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-ink-faint hover:text-danger transition-colors px-2 py-1 rounded-btn hover:bg-danger-soft"
+                    >
+                      <TrashIcon className="w-3 h-3" />
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

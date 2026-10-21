@@ -49,7 +49,6 @@ export default function PagoStatusPage() {
 
   const paymentId = searchParams.get("payment_id");
   const preferenceId = searchParams.get("preference_id");
-  const externalRef = searchParams.get("external_reference");
 
   // Redirigir automáticamente al inicio después de 30s en éxito
   const [countdown, setCountdown] = useState(status === "exitoso" ? 30 : 0);
@@ -64,6 +63,16 @@ export default function PagoStatusPage() {
       router.push("/");
     }
   }, [countdown, status, router]);
+
+  // Verificar y crear el pedido desde el cliente como fallback al webhook
+  useEffect(() => {
+    if (status !== "exitoso" || !paymentId) return;
+    fetch("/api/payments/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payment_id: paymentId }),
+    }).catch(() => {});
+  }, [status, paymentId]);
 
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-6">
