@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircleIcon, AlertCircleIcon, ClockIcon } from "@/components/Icons";
+import { verificarPago } from "@/app/pago/actions";
 
 const ESTADOS = {
   exitoso: {
@@ -64,14 +65,10 @@ export default function PagoStatusPage() {
     }
   }, [countdown, status, router]);
 
-  // Verificar y crear el pedido desde el cliente como fallback al webhook
+  // Verificar y crear el pedido via Server Action (privado, no es un endpoint público)
   useEffect(() => {
     if (status !== "exitoso" || !paymentId) return;
-    fetch("/api/payments/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payment_id: paymentId }),
-    }).catch(() => {});
+    verificarPago(paymentId).catch(() => {});
   }, [status, paymentId]);
 
   return (
