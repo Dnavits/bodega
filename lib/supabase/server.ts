@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 // Cliente de Supabase para uso en Server Components y Route Handlers.
@@ -29,5 +30,16 @@ export async function createClient() {
         },
       },
     }
+  );
+}
+
+// Cliente con service role — bypasea RLS completamente.
+// Usar SOLO en rutas de servidor de confianza (webhooks, pagos, etc.)
+// NUNCA exponer al cliente ni a rutas públicas.
+export function createServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
   );
 }

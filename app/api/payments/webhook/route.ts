@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Verificar que no exista ya un pedido con este payment_id (idempotencia)
     const { data: existente } = await supabase
