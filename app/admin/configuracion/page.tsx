@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon, DatabaseIcon, CreditCardIcon, CheckCircleIcon, AlertCircleIcon } from "@/components/Icons";
+import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon, DatabaseIcon, CreditCardIcon, AlertCircleIcon } from "@/components/Icons";
 
 type WhitelistUser = {
   id: string;
@@ -688,59 +688,13 @@ export default function AdminConfiguracion() {
           </button>
         </div>
 
-        {/* Info de configuración del token */}
-        <div className="rounded-xl border border-hairline bg-surface p-4 space-y-3">
-          <div className="flex items-start gap-2.5">
-            <AlertCircleIcon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-            <div className="space-y-1 text-xs text-ink-muted">
-              <p className="font-bold text-ink">Configuración del Access Token (MP)</p>
-              <p>
-                El token de Mercado Pago <strong>nunca se guarda en la base de datos</strong> por seguridad.
-                Debes configurarlo como variable de entorno en tu servidor.
-              </p>
-            </div>
-          </div>
-
-          <div className="divide-y divide-divider text-xs">
-            <div className="flex items-center justify-between py-2.5">
-              <span className="text-ink-muted">Variable en Vercel</span>
-              <code className="font-mono font-bold text-accent bg-sky px-2 py-0.5 rounded-tag">
-                MP_ACCESS_TOKEN
-              </code>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <span className="text-ink-muted">Variable en .env.local</span>
-              <code className="font-mono font-bold text-ink-muted bg-canvas border border-hairline px-2 py-0.5 rounded-tag text-[10px]">
-                MP_ACCESS_TOKEN=APP_USR-xxxx
-              </code>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <span className="text-ink-muted">Webhook URL para Mercado Pago</span>
-              <code className="font-mono text-[10px] text-ink-muted">
-                {typeof window !== "undefined" ? window.location.origin : ""}/api/payments/webhook
-              </code>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <span className="text-ink-muted">Token detectado en servidor</span>
-              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-tag ${
-                // No podemos saber esto desde el cliente, mostramos ayuda
-                "bg-warning-soft text-warning"
-              }`}>
-                Verificar en Vercel
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* SQL migration reminder */}
-        <div className="flex items-start gap-2.5 p-3 bg-sky/50 border border-accent/20 rounded-xl">
-          <CheckCircleIcon className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-          <p className="text-xs text-ink-muted">
-            <strong className="text-ink">Importante:</strong> Antes de activar, ejecuta el script{" "}
-            <code className="font-mono bg-canvas border border-hairline px-1 rounded text-[10px]">
-              supabase/migration_payments.sql
-            </code>{" "}
-            en tu Supabase SQL Editor para habilitar las columnas necesarias de seguimiento de pagos.
+        {/* Tip para el dueño */}
+        <div className="flex items-start gap-2.5 p-3.5 bg-sky/50 border border-accent/20 rounded-xl">
+          <AlertCircleIcon className="w-4 h-4 text-accent shrink-0 mt-1" />
+          <p className="text-xs text-ink-muted leading-relaxed">
+            <strong className="text-ink">Importante:</strong> Para activar los pagos, comparte únicamente
+            tu <strong className="text-ink">clave de acceso de Mercado Pago</strong> con tu desarrollador
+            para que la configure en el servidor. No la compartas con nadie más.
           </p>
         </div>
       </div>
