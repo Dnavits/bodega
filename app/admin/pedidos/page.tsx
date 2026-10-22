@@ -156,7 +156,7 @@ export default function AdminPedidos() {
     const supabase = createClient();
     const { data } = await supabase
       .from("pedidos")
-      .select("*, pedido_items(id, producto_id, nombre_producto, imagen_url, cantidad, precio_unitario)")
+      .select("*, pedido_items(id, producto_id, cantidad, precio_unitario)")
       .order("created_at", { ascending: false });
 
     // Enriquecer items con datos frescos de productos (nombre, imagen, stock)
