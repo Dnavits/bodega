@@ -35,26 +35,6 @@ export async function GET() {
           imagenFinal = prod.imagenes[0];
         }
 
-        // Si el producto en DB no tiene foto cargada por el admin aún, asignar foto temática por defecto
-        if (!imagenFinal) {
-          const n = (prod?.nombre || item.nombre_producto || "").toLowerCase();
-          if (n.includes("corona")) {
-            imagenFinal = "https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&w=400&q=80";
-          } else if (n.includes("aguardiente") || n.includes("antioqueño")) {
-            imagenFinal = "https://images.unsplash.com/photo-1527061011665-3652c757a4d4?auto=format&fit=crop&w=400&q=80";
-          } else if (n.includes("coca") || n.includes("cola")) {
-            imagenFinal = "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=400&q=80";
-          } else if (n.includes("postobon") || n.includes("manzana")) {
-            imagenFinal = "https://images.unsplash.com/photo-1581636625402-29b2a704ef13?auto=format&fit=crop&w=400&q=80";
-          } else if (n.includes("cerveza") || n.includes("aguila")) {
-            imagenFinal = "https://images.unsplash.com/photo-1608270192864-162e245a499d?auto=format&fit=crop&w=400&q=80";
-          } else if (n.includes("agua")) {
-            imagenFinal = "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=400&q=80";
-          } else {
-            imagenFinal = "https://images.unsplash.com/photo-1527061011665-3652c757a4d4?auto=format&fit=crop&w=400&q=80";
-          }
-        }
-
         return {
           ...item,
           _nombre: item.nombre_producto || prod?.nombre || "Producto",
