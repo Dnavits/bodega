@@ -3,7 +3,7 @@
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { createServiceClient } from "@/lib/supabase/server";
 
-export async function verificarPago(paymentId: string): Promise<{ ok: boolean; created: boolean }> {
+export async function verificarPago(paymentId: string, paramPreferenceId?: string | null): Promise<{ ok: boolean; created: boolean }> {
   try {
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken || !paymentId) return { ok: false, created: false };
@@ -20,7 +20,7 @@ export async function verificarPago(paymentId: string): Promise<{ ok: boolean; c
 
     const mpStatus = paymentData.status;
     const mpPaymentId = paymentData.id?.toString();
-    const mpPreferenceId = paymentData.preference_id;
+    const mpPreferenceId = paymentData.preference_id || paramPreferenceId || null;
     const metadata = paymentData.metadata || {};
     const totalAmount = paymentData.transaction_amount;
 

@@ -68,8 +68,8 @@ export default function PagoStatusPage() {
   // Verificar y crear el pedido via Server Action (privado, no es un endpoint público)
   useEffect(() => {
     if (status !== "exitoso" || !paymentId) return;
-    verificarPago(paymentId).catch(() => {});
-  }, [status, paymentId]);
+    verificarPago(paymentId, preferenceId).catch(() => {});
+  }, [status, paymentId, preferenceId]);
 
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-6">
