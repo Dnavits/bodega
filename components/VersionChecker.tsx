@@ -98,7 +98,7 @@ export function VersionChecker() {
           className="bg-accent hover:bg-accent/90 text-white font-bold text-[11px] px-3 py-1.5 rounded-btn flex items-center gap-1.5 transition-transform active:scale-95 shrink-0 disabled:opacity-75"
         >
           <RefreshCwIcon className={`w-3.5 h-3.5 ${actualizando ? "animate-spin" : ""}`} />
-          {actualizando ? "Cargando..." : "Actualizar ya"}
+          {actualizando ? "Cargando..." : "Actualizar"}
         </button>
       </div>
     </div>
