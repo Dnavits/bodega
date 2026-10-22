@@ -23,11 +23,10 @@ type PedidoItem = {
   imagen_url?: string;
   cantidad: number;
   precio_unitario: number;
-  productos?: {
-    nombre: string;
-    imagen_url?: string;
-    stock?: number;
-  } | null;
+  // enriquecido en cliente
+  _nombre?: string;
+  _imagen?: string;
+  _stock?: number;
 };
 
 type Pedido = {
@@ -157,9 +156,33 @@ export default function AdminPedidos() {
     const supabase = createClient();
     const { data } = await supabase
       .from("pedidos")
-      .select("*, pedido_items(id, producto_id, nombre_producto, imagen_url, cantidad, precio_unitario, productos(nombre, imagen_url, stock))")
+      .select("*, pedido_items(id, producto_id, nombre_producto, imagen_url, cantidad, precio_unitario)")
       .order("created_at", { ascending: false });
-    setPedidos(data || []);
+
+    // Enriquecer items con datos frescos de productos (nombre, imagen, stock)
+    const todosLosItems = (data || []).flatMap((p) => p.pedido_items || []);
+    const productoIds = [...new Set(
+      todosLosItems.map((i: PedidoItem) => i.producto_id).filter(Boolean)
+    )];
+    let productosMap: Record<string, { nombre: string; imagen_url?: string; stock?: number }> = {};
+    if (productoIds.length > 0) {
+      const { data: prods } = await supabase
+        .from("productos")
+        .select("id, nombre, imagen_url, stock")
+        .in("id", productoIds);
+      for (const p of prods || []) productosMap[p.id] = p;
+    }
+
+    const pedidosEnriquecidos = (data || []).map((p) => ({
+      ...p,
+      pedido_items: (p.pedido_items || []).map((item: PedidoItem) => ({
+        ...item,
+        _nombre: item.nombre_producto || productosMap[item.producto_id || ""]?.nombre,
+        _imagen: item.imagen_url || productosMap[item.producto_id || ""]?.imagen_url,
+        _stock: productosMap[item.producto_id || ""]?.stock,
+      })),
+    }));
+    setPedidos(pedidosEnriquecidos || []);
     setCargando(false);
   }, []);
 
@@ -455,9 +478,9 @@ export default function AdminPedidos() {
                       </span>
                       <div className="flex flex-col gap-1.5">
                         {p.pedido_items.map((item) => {
-                            const nombre = item.nombre_producto || item.productos?.nombre || "Sin nombre";
-                            const imagen = item.imagen_url || item.productos?.imagen_url;
-                            const stock = item.productos?.stock;
+                            const nombre = item._nombre || "Sin nombre";
+                            const imagen = item._imagen;
+                            const stock = item._stock;
                             return (
                           <div
                             key={item.id}
