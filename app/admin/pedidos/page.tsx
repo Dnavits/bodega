@@ -153,37 +153,17 @@ export default function AdminPedidos() {
   }
 
   const cargar = useCallback(async () => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("pedidos")
-      .select("*, pedido_items(id, producto_id, cantidad, precio_unitario)")
-      .order("created_at", { ascending: false });
-
-    // Enriquecer items con datos frescos de productos (nombre, imagen, stock)
-    const todosLosItems = (data || []).flatMap((p) => p.pedido_items || []);
-    const productoIds = [...new Set(
-      todosLosItems.map((i: PedidoItem) => i.producto_id).filter(Boolean)
-    )];
-    let productosMap: Record<string, { nombre: string; imagen_url?: string; stock?: number }> = {};
-    if (productoIds.length > 0) {
-      const { data: prods } = await supabase
-        .from("productos")
-        .select("id, nombre, imagen_url, stock")
-        .in("id", productoIds);
-      for (const p of prods || []) productosMap[p.id] = p;
+    try {
+      const res = await fetch("/api/pedidos", { cache: "no-store" });
+      if (res.ok) {
+        const json = await res.json();
+        setPedidos(json.pedidos || []);
+      }
+    } catch (e) {
+      console.error("Error cargando pedidos:", e);
+    } finally {
+      setCargando(false);
     }
-
-    const pedidosEnriquecidos = (data || []).map((p) => ({
-      ...p,
-      pedido_items: (p.pedido_items || []).map((item: PedidoItem) => ({
-        ...item,
-        _nombre: item.nombre_producto || productosMap[item.producto_id || ""]?.nombre,
-        _imagen: item.imagen_url || productosMap[item.producto_id || ""]?.imagen_url,
-        _stock: productosMap[item.producto_id || ""]?.stock,
-      })),
-    }));
-    setPedidos(pedidosEnriquecidos || []);
-    setCargando(false);
   }, []);
 
   const handleRefresh = useCallback(async () => {
