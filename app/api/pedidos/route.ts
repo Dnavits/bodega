@@ -18,9 +18,9 @@ export async function GET() {
     }
 
     // 2. Traer todos los productos para tener el catálogo completo en memoria
-    const { data: todosLosProductos } = await supabase
+    const { data: todosLosProductos, error: prodErr } = await supabase
       .from("productos")
-      .select("id, nombre, imagen_url, stock, precio");
+      .select("*");
 
     const productosMap = new Map((todosLosProductos || []).map((p) => [String(p.id).toLowerCase(), p]));
 
@@ -31,10 +31,11 @@ export async function GET() {
         const prod = item.producto_id ? productosMap.get(String(item.producto_id).toLowerCase()) : null;
         return {
           ...item,
-          _nombre: item.nombre_producto || prod?.nombre || null,
+          _nombre: item.nombre_producto || prod?.nombre || "Producto",
           _imagen: item.imagen_url || prod?.imagen_url || null,
           _stock: prod?.stock !== undefined ? prod.stock : null,
           _debug_catalog_count: todosLosProductos?.length ?? 0,
+          _debug_err: prodErr ? prodErr.message : null,
         };
       }),
     }));
