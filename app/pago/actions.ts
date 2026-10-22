@@ -45,15 +45,21 @@ export async function verificarPago(paymentId: string): Promise<{ ok: boolean; c
     if (itemsRaw.length > 0) {
       const { data } = await supabase
         .from("productos")
-        .select("id, nombre, precio, stock")
+        .select("id, nombre, precio, stock, imagen_url")
         .in("id", itemsRaw.map((i) => i.id));
       productosReales = data || [];
     }
 
-    const itemsValidados: { producto_id: string; cantidad: number; precio_unitario: number }[] = [];
+    const itemsValidados: { producto_id: string; cantidad: number; precio_unitario: number; nombre_producto: string; imagen_url: string | null }[] = [];
     for (const item of itemsRaw) {
       const real = productosReales.find((p) => p.id === item.id);
-      if (real) itemsValidados.push({ producto_id: real.id, cantidad: item.cantidad, precio_unitario: real.precio });
+      if (real) itemsValidados.push({
+        producto_id: real.id,
+        cantidad: item.cantidad,
+        precio_unitario: real.precio,
+        nombre_producto: real.nombre,
+        imagen_url: real.imagen_url || null,
+      });
     }
 
     // Crear pedido

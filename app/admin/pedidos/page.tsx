@@ -16,6 +16,15 @@ import {
   DownloadIcon,
 } from "@/components/Icons";
 
+type PedidoItem = {
+  id: string;
+  producto_id?: string;
+  nombre_producto?: string;
+  imagen_url?: string;
+  cantidad: number;
+  precio_unitario: number;
+};
+
 type Pedido = {
   id: string;
   numero_orden_seq?: number;
@@ -33,6 +42,7 @@ type Pedido = {
   transaction_id?: string;
   notas?: string;
   created_at: string;
+  pedido_items?: PedidoItem[];
 };
 
 const ESTADOS = [
@@ -142,7 +152,7 @@ export default function AdminPedidos() {
     const supabase = createClient();
     const { data } = await supabase
       .from("pedidos")
-      .select("*")
+      .select("*, pedido_items(id, producto_id, nombre_producto, imagen_url, cantidad, precio_unitario)")
       .order("created_at", { ascending: false });
     setPedidos(data || []);
     setCargando(false);
@@ -431,6 +441,54 @@ export default function AdminPedidos() {
                       {p.ciudad ? `, ${p.ciudad}` : ""}
                     </strong>
                   </div>
+
+                  {/* Productos del pedido */}
+                  {p.pedido_items && p.pedido_items.length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-eyebrow text-ink-faint">
+                        Productos ({p.pedido_items.length})
+                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        {p.pedido_items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-2.5 bg-surface border border-hairline rounded-xl px-2.5 py-2"
+                          >
+                            {/* Imagen */}
+                            <div className="w-10 h-10 rounded-lg bg-canvas border border-hairline overflow-hidden shrink-0">
+                              {item.imagen_url ? (
+                                <img
+                                  src={item.imagen_url}
+                                  alt={item.nombre_producto || "Producto"}
+                                  className="w-full h-full object-contain"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-ink-faint">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-ink truncate">
+                                {item.nombre_producto || "Producto sin nombre"}
+                              </p>
+                              <p className="text-[10px] text-ink-muted">
+                                x{item.cantidad} · ${item.precio_unitario.toLocaleString("es-CO")} c/u
+                              </p>
+                            </div>
+                            {/* Subtotal */}
+                            <span className="text-xs font-bold text-ink shrink-0">
+                              ${(item.cantidad * item.precio_unitario).toLocaleString("es-CO")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {p.notas && (
                     <div className="text-xs text-ink-muted italic">

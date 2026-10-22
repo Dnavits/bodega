@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   if (realIds.length > 0) {
     const { data } = await supabase
       .from("productos")
-      .select("id, nombre, precio, stock, activo")
+      .select("id, nombre, precio, stock, activo, imagen_url")
       .in("id", realIds);
     productosReales = data || [];
   }
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   }
 
   let total = 0;
-  const itemsValidados: { producto_id: string; cantidad: number; precio_unitario: number }[] = [];
+  const itemsValidados: { producto_id: string; cantidad: number; precio_unitario: number; nombre_producto: string; imagen_url: string | null }[] = [];
 
   for (const item of items) {
     if (item.id.startsWith("sample-")) {
@@ -70,6 +70,8 @@ export async function POST(request: Request) {
         producto_id: real.id,
         cantidad: item.cantidad,
         precio_unitario: precio,
+        nombre_producto: real.nombre,
+        imagen_url: real.imagen_url || null,
       });
     }
   }
