@@ -31,9 +31,10 @@ export async function GET() {
         const prod = item.producto_id ? productosMap.get(String(item.producto_id).toLowerCase()) : null;
         return {
           ...item,
-          _nombre: item.nombre_producto || prod?.nombre || "Producto",
+          _nombre: item.nombre_producto || prod?.nombre || null,
           _imagen: item.imagen_url || prod?.imagen_url || null,
           _stock: prod?.stock !== undefined ? prod.stock : null,
+          _debug_catalog_count: todosLosProductos?.length ?? 0,
         };
       }),
     }));
