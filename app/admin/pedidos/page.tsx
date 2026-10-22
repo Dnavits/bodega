@@ -23,6 +23,11 @@ type PedidoItem = {
   imagen_url?: string;
   cantidad: number;
   precio_unitario: number;
+  productos?: {
+    nombre: string;
+    imagen_url?: string;
+    stock?: number;
+  } | null;
 };
 
 type Pedido = {
@@ -152,7 +157,7 @@ export default function AdminPedidos() {
     const supabase = createClient();
     const { data } = await supabase
       .from("pedidos")
-      .select("*, pedido_items(id, producto_id, nombre_producto, imagen_url, cantidad, precio_unitario)")
+      .select("*, pedido_items(id, producto_id, nombre_producto, imagen_url, cantidad, precio_unitario, productos(nombre, imagen_url, stock))")
       .order("created_at", { ascending: false });
     setPedidos(data || []);
     setCargando(false);
@@ -449,17 +454,21 @@ export default function AdminPedidos() {
                         Productos ({p.pedido_items.length})
                       </span>
                       <div className="flex flex-col gap-1.5">
-                        {p.pedido_items.map((item) => (
+                        {p.pedido_items.map((item) => {
+                            const nombre = item.nombre_producto || item.productos?.nombre || "Sin nombre";
+                            const imagen = item.imagen_url || item.productos?.imagen_url;
+                            const stock = item.productos?.stock;
+                            return (
                           <div
                             key={item.id}
                             className="flex items-center gap-2.5 bg-surface border border-hairline rounded-xl px-2.5 py-2"
                           >
                             {/* Imagen */}
                             <div className="w-10 h-10 rounded-lg bg-canvas border border-hairline overflow-hidden shrink-0">
-                              {item.imagen_url ? (
+                              {imagen ? (
                                 <img
-                                  src={item.imagen_url}
-                                  alt={item.nombre_producto || "Producto"}
+                                  src={imagen}
+                                  alt={nombre}
                                   className="w-full h-full object-contain"
                                 />
                               ) : (
@@ -473,19 +482,24 @@ export default function AdminPedidos() {
                             </div>
                             {/* Info */}
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-ink truncate">
-                                {item.nombre_producto || "Producto sin nombre"}
-                              </p>
-                              <p className="text-[10px] text-ink-muted">
-                                x{item.cantidad} · ${item.precio_unitario.toLocaleString("es-CO")} c/u
-                              </p>
+                              <p className="text-xs font-semibold text-ink truncate">{nombre}</p>
+                              <p className="text-[10px] text-ink-muted">x{item.cantidad} comprado(s)</p>
                             </div>
-                            {/* Subtotal */}
-                            <span className="text-xs font-bold text-ink shrink-0">
-                              ${(item.cantidad * item.precio_unitario).toLocaleString("es-CO")}
-                            </span>
+                            {/* Stock restante */}
+                            <div className="text-right shrink-0">
+                              {stock !== undefined && stock !== null ? (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-tag border ${
+                                  stock <= 3
+                                    ? "bg-warning-soft border-warning/20 text-warning"
+                                    : "bg-mint border-emerald/20 text-emerald"
+                                }`}>
+                                  {stock} en stock
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
-                        ))}
+                            );
+                          })}
                       </div>
                     </div>
                   )}
