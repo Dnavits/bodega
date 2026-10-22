@@ -17,30 +17,25 @@ export async function GET() {
       return NextResponse.json({ error: pErr.message }, { status: 500 });
     }
 
-    // 2. Enriquecer con productos
-    const todosLosItems = (pedidos || []).flatMap((p) => p.pedido_items || []);
-    const productoIds = [...new Set(todosLosItems.map((i: any) => i.producto_id).filter(Boolean))];
+    // 2. Traer todos los productos para tener el catálogo completo en memoria
+    const { data: todosLosProductos } = await supabase
+      .from("productos")
+      .select("id, nombre, imagen_url, stock, precio");
 
-    let productosMap: Record<string, any> = {};
-    if (productoIds.length > 0) {
-      const { data: prods } = await supabase
-        .from("productos")
-        .select("id, nombre, imagen_url, stock")
-        .in("id", productoIds);
+    const productosMap = new Map((todosLosProductos || []).map((p) => [String(p.id).toLowerCase(), p]));
 
-      for (const pr of prods || []) {
-        productosMap[pr.id] = pr;
-      }
-    }
-
+    // 3. Enriquecer los items de los pedidos
     const pedidosEnriquecidos = (pedidos || []).map((p) => ({
       ...p,
-      pedido_items: (p.pedido_items || []).map((item: any) => ({
-        ...item,
-        _nombre: item.nombre_producto || productosMap[item.producto_id]?.nombre || null,
-        _imagen: item.imagen_url || productosMap[item.producto_id]?.imagen_url || null,
-        _stock: productosMap[item.producto_id]?.stock ?? null,
-      })),
+      pedido_items: (p.pedido_items || []).map((item: any) => {
+        const prod = item.producto_id ? productosMap.get(String(item.producto_id).toLowerCase()) : null;
+        return {
+          ...item,
+          _nombre: item.nombre_producto || prod?.nombre || "Producto",
+          _imagen: item.imagen_url || prod?.imagen_url || null,
+          _stock: prod?.stock !== undefined ? prod.stock : null,
+        };
+      }),
     }));
 
     return NextResponse.json({ pedidos: pedidosEnriquecidos });
