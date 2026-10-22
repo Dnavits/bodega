@@ -164,12 +164,8 @@ export default function AdminPedidos() {
         setRealtimeOk(status === "SUBSCRIBED");
       });
 
-    // Polling de respaldo cada 30s (por si realtime no está habilitado en Supabase)
-    const intervalo = setInterval(() => cargar(), 30_000);
-
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(intervalo);
     };
   }, [cargar]);
 
