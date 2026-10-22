@@ -108,34 +108,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── Reconstruir los items desde metadata ──
-    let itemsRaw: { id: string; cantidad: number }[] = [];
-    try {
-      itemsRaw = JSON.parse(metadata.items_raw || "[]");
-    } catch {
-      itemsRaw = [];
+    // ── Reconstruir los items desde Supabase (más confiable que el metadata de MP) ──
+    let itemsValidados: { producto_id: string; nombre_producto: string; cantidad: number; precio_unitario: number }[] = [];
+
+    if (mpPreferenceId) {
+      const { data: prefItems } = await supabase
+        .from("mp_preference_items")
+        .select("producto_id, nombre_producto, cantidad, precio_unitario")
+        .eq("preference_id", mpPreferenceId);
+
+      if (prefItems && prefItems.length > 0) {
+        itemsValidados = prefItems.map((i) => ({
+          producto_id: i.producto_id,
+          nombre_producto: i.nombre_producto,
+          cantidad: i.cantidad,
+          precio_unitario: i.precio_unitario,
+        }));
+      }
     }
 
-    // Validar precios desde DB otra vez (el pago ya fue aprobado pero verificamos)
-    let productosReales: any[] = [];
-    if (itemsRaw.length > 0) {
-      const ids = itemsRaw.map((i) => i.id);
-      const { data } = await supabase
-        .from("productos")
-        .select("id, nombre, precio, stock")
-        .in("id", ids);
-      productosReales = data || [];
-    }
-
-    const itemsValidados: { producto_id: string; cantidad: number; precio_unitario: number }[] = [];
-    for (const item of itemsRaw) {
-      const real = productosReales.find((p) => p.id === item.id);
-      if (real) {
-        itemsValidados.push({
-          producto_id: real.id,
-          cantidad: item.cantidad,
-          precio_unitario: real.precio,
-        });
+    // Fallback: intentar desde metadata.items_raw si no hay en Supabase
+    if (itemsValidados.length === 0) {
+      let itemsRaw: { id: string; cantidad: number }[] = [];
+      try { itemsRaw = JSON.parse(metadata.items_raw || "[]"); } catch { itemsRaw = []; }
+      if (itemsRaw.length > 0) {
+        const { data: prods } = await supabase
+          .from("productos")
+          .select("id, nombre, precio, stock")
+          .in("id", itemsRaw.map((i) => i.id));
+        for (const item of itemsRaw) {
+          const real = (prods || []).find((p) => p.id === item.id);
+          if (real) itemsValidados.push({ producto_id: real.id, nombre_producto: real.nombre, cantidad: item.cantidad, precio_unitario: real.precio });
+        }
       }
     }
 
@@ -176,12 +180,16 @@ export async function POST(request: Request) {
 
       // Descontar stock
       for (const item of itemsValidados) {
-        const real = productosReales.find((p) => p.id === item.producto_id);
-        if (real && typeof real.stock === "number") {
-          const nuevoStock = Math.max(0, real.stock - item.cantidad);
+        const nuevoStock = await supabase
+          .from("productos")
+          .select("stock")
+          .eq("id", item.producto_id)
+          .single();
+        const stockActual = nuevoStock.data?.stock;
+        if (typeof stockActual === "number") {
           await supabase
             .from("productos")
-            .update({ stock: nuevoStock })
+            .update({ stock: Math.max(0, stockActual - item.cantidad) })
             .eq("id", item.producto_id);
         }
       }

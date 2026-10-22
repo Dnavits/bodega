@@ -149,6 +149,22 @@ export async function POST(request: Request) {
       },
     });
 
+    // Guardar items en Supabase vinculados a la preference_id
+    // (más confiable que depender del metadata de MP que puede truncarse)
+    const preferenceId = mpResponse.id;
+    if (preferenceId && mpItems.length > 0) {
+      const supabaseService = await import("@/lib/supabase/server").then(m => m.createServiceClient());
+      await supabaseService.from("mp_preference_items").insert(
+        mpItems.map((item) => ({
+          preference_id: preferenceId,
+          producto_id: item.id,
+          nombre_producto: item.title,
+          cantidad: item.quantity,
+          precio_unitario: item.unit_price,
+        }))
+      );
+    }
+
     return NextResponse.json({
       preferenceId: mpResponse.id,
       initPoint: mpResponse.init_point, // URL de pago producción
