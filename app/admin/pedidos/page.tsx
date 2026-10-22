@@ -125,6 +125,7 @@ export default function AdminPedidos() {
   const [cargando, setCargando] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
+  const [realtimeOk, setRealtimeOk] = useState(false);
   const [actualizando, setActualizando] = useState<string | null>(null);
   const [borrando, setBorrando] = useState<string | null>(null);
   const [confirmBorrar, setConfirmBorrar] = useState<string | null>(null);
@@ -158,9 +159,18 @@ export default function AdminPedidos() {
     const supabase = createClient();
     const channel = supabase
       .channel("pedidos_admin")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, cargar)
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .on("postgres_changes", { event: "*", schema: "public", table: "pedidos" }, () => cargar())
+      .subscribe((status) => {
+        setRealtimeOk(status === "SUBSCRIBED");
+      });
+
+    // Polling de respaldo cada 30s (por si realtime no está habilitado en Supabase)
+    const intervalo = setInterval(() => cargar(), 30_000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(intervalo);
+    };
   }, [cargar]);
 
   async function cambiarEstado(pedidoId: string, nuevoEstado: string) {
@@ -246,6 +256,18 @@ export default function AdminPedidos() {
           </h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Indicador En vivo */}
+          <span
+            title={realtimeOk ? "Actualización en tiempo real activa" : "Actualizando cada 30 segundos"}
+            className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-eyebrow px-2.5 py-1.5 rounded-tag border transition-all ${
+              realtimeOk
+                ? "bg-mint border-emerald/20 text-emerald"
+                : "bg-surface border-hairline text-ink-muted"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${realtimeOk ? "bg-emerald animate-pulse" : "bg-ink-faint"}`} />
+            {realtimeOk ? "En vivo" : "30 s"}
+          </span>
           {/* Descargar mes vigente */}
           <button
             onClick={() => {
