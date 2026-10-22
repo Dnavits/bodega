@@ -29,10 +29,15 @@ export async function GET() {
       ...p,
       pedido_items: (p.pedido_items || []).map((item: any) => {
         const prod = item.producto_id ? productosMap.get(String(item.producto_id).toLowerCase()) : null;
+        const imagenProd =
+          item.imagen_url ||
+          prod?.imagen_url ||
+          (Array.isArray(prod?.imagenes) && prod.imagenes.length > 0 ? prod.imagenes[0] : null);
+
         return {
           ...item,
           _nombre: item.nombre_producto || prod?.nombre || "Producto",
-          _imagen: item.imagen_url || prod?.imagen_url || null,
+          _imagen: imagenProd,
           _stock: prod?.stock !== undefined ? prod.stock : null,
         };
       }),
