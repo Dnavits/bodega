@@ -31,6 +31,7 @@ type PedidoItem = {
 
 type Pedido = {
   id: string;
+  numero_orden?: number;
   numero_orden_seq?: number;
   nombre: string;
   telefono: string;
@@ -107,8 +108,8 @@ function MetodoBadge({ metodo }: { metodo?: string }) {
 }
 
 function descargarExcel(pedidos: Pedido[], nombreArchivo: string) {
-  const filas = pedidos.map((p) => ({
-    "Orden": p.numero_orden_seq ? `#${p.numero_orden_seq}` : `#${p.id.slice(0, 6).toUpperCase()}`,
+  const filas = pedidos.map((p, idx) => ({
+    "Orden": `#${pedidos.length - idx}`,
     "Fecha": new Date(p.created_at).toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }),
     "Estado": p.estado.replace("_", " ").toUpperCase(),
     "Cliente": p.nombre,
@@ -386,7 +387,14 @@ export default function AdminPedidos() {
         </div>
       ) : (
         <div className="space-y-4">
-          {pedidosFiltrados.map((p) => (
+          {pedidosFiltrados.map((p) => {
+            // Número correlativo de pedido #1, #2, #3... ordenado por fecha de creación ascendente
+            const indiceOrden = [...pedidos]
+              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+              .findIndex((x) => x.id === p.id);
+            const numPedido = indiceOrden !== -1 ? indiceOrden + 1 : 1;
+
+            return (
             <div
               key={p.id}
               className="bg-canvas border border-hairline rounded-card p-5 shadow-card hover:shadow-card-hover transition-shadow"
@@ -397,7 +405,7 @@ export default function AdminPedidos() {
                   {/* Encabezado */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-ink-muted font-mono">
-                      #{p.numero_orden_seq || p.id.slice(0, 6).toUpperCase()}
+                      #{numPedido}
                     </span>
                     <EstadoBadge estado={p.estado} />
                     <MetodoBadge metodo={p.metodo_pago} />
@@ -576,7 +584,8 @@ export default function AdminPedidos() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
