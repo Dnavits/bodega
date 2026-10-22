@@ -26,12 +26,28 @@ export async function generateMetadata(): Promise<Metadata> {
     config.titulo_pestana ||
     `${nombre} | Gaseosas, Cervezas, Aguas & Licores a Domicilio`;
 
+  const ogTitle = config.meta_titulo || `${nombre} · Gaseosas y Bebidas a Domicilio`;
+  const ogDescription =
+    config.meta_descripcion ||
+    `Pide tus bebidas frías al instante con entregas en menos de 45 min en Medellín y el Valle de Aburrá con ${nombre}.`;
+
+  const ogImages = config.meta_imagen_url
+    ? [
+        {
+          url: config.meta_imagen_url,
+          width: 1200,
+          height: 630,
+          alt: ogTitle,
+        },
+      ]
+    : undefined;
+
   return {
     title: {
       default: fullTitle,
       template: `%s · ${nombre}`,
     },
-    description: `${nombre} en Medellín. Bebidas frías, gaseosas por paca, cervezas nacionales e importadas y licores a domicilio.`,
+    description: ogDescription,
     icons: config.favicon_url
       ? {
           icon: config.favicon_url,
@@ -40,10 +56,17 @@ export async function generateMetadata(): Promise<Metadata> {
         }
       : undefined,
     openGraph: {
-      title: `${nombre} · Gaseosas y Bebidas a Domicilio`,
-      description: `Pide tus bebidas frías al instante con entregas en menos de 45 min en Medellín y el Valle de Aburrá con ${nombre}.`,
+      title: ogTitle,
+      description: ogDescription,
       locale: "es_CO",
       type: "website",
+      images: ogImages,
+    },
+    twitter: {
+      card: config.meta_imagen_url ? "summary_large_image" : "summary",
+      title: ogTitle,
+      description: ogDescription,
+      images: config.meta_imagen_url ? [config.meta_imagen_url] : undefined,
     },
   };
 }

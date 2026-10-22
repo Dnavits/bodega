@@ -24,6 +24,10 @@ export type SiteConfig = {
   horario_inicio:             string;
   horario_fin:                string;
   horario_dias:               string[];
+  // Metadatos para compartir (Open Graph / WhatsApp / redes)
+  meta_titulo:                string | null;
+  meta_descripcion:           string | null;
+  meta_imagen_url:            string | null;
 };
 
 const DEFAULT_CONFIG: SiteConfig = {
@@ -48,6 +52,9 @@ const DEFAULT_CONFIG: SiteConfig = {
   horario_inicio:            '09:00',
   horario_fin:               '23:00',
   horario_dias:              ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],
+  meta_titulo:               null,
+  meta_descripcion:          null,
+  meta_imagen_url:           null,
 };
 
 export async function getSiteConfig(): Promise<SiteConfig> {
@@ -96,6 +103,9 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       horario_inicio:            data.horario_inicio ?? DEFAULT_CONFIG.horario_inicio,
       horario_fin:               data.horario_fin ?? DEFAULT_CONFIG.horario_fin,
       horario_dias:              Array.isArray(data.horario_dias) ? data.horario_dias : DEFAULT_CONFIG.horario_dias,
+      meta_titulo:               data.meta_titulo               ?? null,
+      meta_descripcion:          data.meta_descripcion          ?? null,
+      meta_imagen_url:           data.meta_imagen_url           ?? null,
     };
   } catch {
     return DEFAULT_CONFIG;

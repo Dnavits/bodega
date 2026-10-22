@@ -102,6 +102,12 @@ export default function AdminPersonalizacion() {
   const [horarioFin, setHorarioFin] = useState("23:00");
   const [horarioDias, setHorarioDias] = useState<string[]>(["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]);
 
+  // Metadatos Sociales (Open Graph / WhatsApp)
+  const [metaTitulo, setMetaTitulo] = useState("");
+  const [metaDescripcion, setMetaDescripcion] = useState("");
+  const [metaImagenUrl, setMetaImagenUrl] = useState("");
+  const metaImagenInputRef = useRef<HTMLInputElement>(null);
+
   // Estados UI
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -143,6 +149,10 @@ export default function AdminPersonalizacion() {
         if (config.horario_inicio) setHorarioInicio(config.horario_inicio);
         if (config.horario_fin) setHorarioFin(config.horario_fin);
         if (config.horario_dias) setHorarioDias(config.horario_dias);
+
+        if (config.meta_titulo) setMetaTitulo(config.meta_titulo);
+        if (config.meta_descripcion) setMetaDescripcion(config.meta_descripcion);
+        if (config.meta_imagen_url) setMetaImagenUrl(config.meta_imagen_url);
       }
     } catch (err: any) {
       console.error("Error al cargar personalización:", err);
@@ -176,6 +186,19 @@ export default function AdminPersonalizacion() {
       setMensaje("✓ Favicon cargado a 64x64 px. Haz clic en Guardar Cambios para aplicar.");
     } catch (err: any) {
       setError(err.message || "Error al procesar el favicon.");
+    }
+  }
+
+  // Manejo de archivo para Imagen de Metadatos Sociales / Open Graph (1200x630)
+  async function handleMetaImagenFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const processed = await processImageFile(file, { maxWidth: 1200, maxHeight: 630, quality: 0.85 });
+      setMetaImagenUrl(processed);
+      setMensaje("✓ Imagen de portada social procesada (1200×630). Guarda los cambios para aplicarla.");
+    } catch (err: any) {
+      setError(err.message || "Error al procesar la imagen de portada.");
     }
   }
 
@@ -251,6 +274,9 @@ export default function AdminPersonalizacion() {
       horario_inicio: horarioInicio.trim() || "09:00",
       horario_fin: horarioFin.trim() || "23:00",
       horario_dias: horarioDias,
+      meta_titulo: metaTitulo.trim() || null,
+      meta_descripcion: metaDescripcion.trim() || null,
+      meta_imagen_url: metaImagenUrl.trim() || null,
     };
 
     let updateError: any = null;
@@ -479,6 +505,113 @@ export default function AdminPersonalizacion() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Metadatos Sociales / Vista Previa Compartida */}
+            <div className="border-t border-divider pt-6 space-y-4">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-eyebrow text-accent">
+                  Tarjeta para Compartir en Redes &amp; WhatsApp (Open Graph)
+                </h3>
+                <p className="text-[11px] text-ink-muted mt-0.5">
+                  Personaliza cómo se ve el enlace de tu tienda cuando lo envías por WhatsApp, Facebook, X o Discord.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Campos */}
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-ink block mb-1">
+                      Título al compartir
+                    </label>
+                    <input
+                      type="text"
+                      value={metaTitulo}
+                      onChange={(e) => setMetaTitulo(e.target.value)}
+                      placeholder="Ej: Bodega Dnavits · Gaseosas y Cervezas Frías en Medellín"
+                      className="w-full bg-canvas border border-hairline rounded-input px-3.5 py-2 text-xs text-ink outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-ink block mb-1">
+                      Descripción breve
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={metaDescripcion}
+                      onChange={(e) => setMetaDescripcion(e.target.value)}
+                      placeholder="Ej: Pide tus bebidas favoritas frías a domicilio con entrega inmediata. Precios de bodega directo a tu casa."
+                      className="w-full bg-canvas border border-hairline rounded-input p-3 text-xs text-ink outline-none focus:border-accent resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-ink">
+                        Imagen de portada (Banner social)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => metaImagenInputRef.current?.click()}
+                        className="bg-canvas border border-hairline hover:bg-surface text-ink text-xs font-bold px-3 py-1.5 rounded-btn shadow-subtle flex items-center gap-1.5 transition-all active:scale-95"
+                      >
+                        <UploadIcon className="w-3.5 h-3.5 text-accent" />
+                        <span>Subir Imagen</span>
+                      </button>
+                      <input
+                        ref={metaImagenInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleMetaImagenFile}
+                        className="hidden"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={metaImagenUrl}
+                      onChange={(e) => setMetaImagenUrl(e.target.value)}
+                      placeholder="O pega URL (https://...)"
+                      className="w-full bg-canvas border border-hairline rounded-input px-3 py-1.5 text-xs text-ink outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Previsualización estilo WhatsApp / Redes */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-eyebrow text-ink-muted block mb-1.5">
+                    Vista previa de cómo lo verán tus clientes
+                  </label>
+                  <div className="bg-[#1f2c34] text-white rounded-xl overflow-hidden border border-white/10 shadow-card text-left max-w-sm">
+                    {metaImagenUrl ? (
+                      <div className="w-full h-36 bg-black/40 overflow-hidden">
+                        <img
+                          src={metaImagenUrl}
+                          alt="Preview Portada"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-28 bg-[#121b22] flex flex-col items-center justify-center text-white/40 text-xs gap-1 border-b border-white/5">
+                        <UploadIcon className="w-6 h-6 opacity-40" />
+                        <span>Sin imagen de portada configurada</span>
+                      </div>
+                    )}
+                    <div className="p-3 bg-[#1f2c34] space-y-1">
+                      <p className="text-xs font-bold text-white leading-snug line-clamp-2">
+                        {metaTitulo.trim() || nombreBodega + " · Gaseosas y Bebidas a Domicilio"}
+                      </p>
+                      <p className="text-[11px] text-white/70 line-clamp-3 leading-relaxed">
+                        {metaDescripcion.trim() || "Pide tus bebidas frías al instante con entregas en menos de 45 min en Medellín con " + nombreBodega + "."}
+                      </p>
+                      <span className="text-[9px] text-white/40 block pt-1 font-mono uppercase">
+                        bodega-borrador.vercel.app
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
