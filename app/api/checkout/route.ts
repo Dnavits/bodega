@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { sanitizeText, sanitizeEmail, sanitizePhone } from "@/lib/sanitize";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  // 0. Mitigación Rate Limit (máximo 12 pedidos por minuto por IP)
+  const ip = getClientIp(request);
+  const { success } = checkRateLimit(`checkout_${ip}`, 12, 60 * 1000);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Demasiados intentos seguidos. Por favor espera un minuto antes de reintentar." },
+      { status: 429 }
+    );
+  }
+
   const supabase = await createClient();
 
   const {
@@ -76,20 +88,31 @@ export async function POST(request: Request) {
     }
   }
 
+  // Sanitización estricta de datos de contacto y entrega
+  const safeNombre = sanitizeText(nombre, 80);
+  const safeTelefono = sanitizePhone(telefono);
+  const safeEmail = sanitizeEmail(email || user?.email);
+  const safeTexto = sanitizeText(texto, 120);
+  const safeDetalle = sanitizeText(detalle, 80);
+  const safeBarrio = sanitizeText(barrio, 60);
+  const safeCiudad = sanitizeText(ciudad, 40) || "Medellín";
+  const safeNotas = sanitizeText(notas, 250);
+  const safeMetodo = sanitizeText(metodo_pago, 30) || "efectivo";
+
   // Insertar en la tabla 'pedidos' con fallback si metodo_pago no existe aún en el schema
   const payloadPedido: Record<string, any> = {
     user_id: user?.id || null,
     total,
     estado: "pendiente",
-    metodo_pago: metodo_pago || "efectivo",
-    nombre,
-    telefono,
-    email: email || user?.email || null,
-    direccion: texto,
-    detalle_direccion: detalle || null,
-    barrio,
-    ciudad: ciudad || "Medellín",
-    notas: notas || null,
+    metodo_pago: safeMetodo,
+    nombre: safeNombre,
+    telefono: safeTelefono,
+    email: safeEmail || null,
+    direccion: safeTexto,
+    detalle_direccion: safeDetalle || null,
+    barrio: safeBarrio,
+    ciudad: safeCiudad,
+    notas: safeNotas || null,
   };
 
   let { data: pedido, error: pedidoError } = await supabase

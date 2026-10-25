@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeText, sanitizeEmail, sanitizePhone } from "@/lib/sanitize";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    // 0. Mitigación Rate Limit (máximo 12 solicitudes por minuto por IP)
+    const ip = getClientIp(request);
+    const { success } = checkRateLimit(`mp_create_${ip}`, 12, 60 * 1000);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Demasiados intentos de pago. Por favor espera un minuto antes de reintentar." },
+        { status: 429 }
+      );
+    }
+
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
       return NextResponse.json(
@@ -41,6 +53,16 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // Sanitización estricta de datos de entrada
+    const safeNombre = sanitizeText(nombre, 80);
+    const safeTelefono = sanitizePhone(telefono);
+    const safeEmail = sanitizeEmail(email);
+    const safeTexto = sanitizeText(texto, 120);
+    const safeDetalle = sanitizeText(detalle, 80);
+    const safeBarrio = sanitizeText(barrio, 60);
+    const safeCiudad = sanitizeText(ciudad, 40) || "Medellín";
+    const safeNotas = sanitizeText(notas, 250);
 
     // ── Validar precios desde la DB (nunca confiar en el cliente) ──
     const realIds = items
@@ -105,14 +127,14 @@ export async function POST(request: Request) {
 
     // ── Guardar datos de entrega en metadata para el webhook ──
     const metadata = {
-      nombre,
-      telefono,
-      email: email || "",
-      direccion: texto,
-      detalle_direccion: detalle || "",
-      barrio,
-      ciudad: ciudad || "Medellín",
-      notas: notas || "",
+      nombre: safeNombre,
+      telefono: safeTelefono,
+      email: safeEmail,
+      direccion: safeTexto,
+      detalle_direccion: safeDetalle,
+      barrio: safeBarrio,
+      ciudad: safeCiudad,
+      notas: safeNotas,
       items_raw: JSON.stringify(
         items
           .filter((i: any) => !i.id.startsWith("sample-"))
@@ -131,9 +153,9 @@ export async function POST(request: Request) {
       body: {
         items: mpItems,
         payer: {
-          name: nombre,
-          phone: { number: telefono },
-          ...(email ? { email } : {}),
+          name: safeNombre,
+          phone: { number: safeTelefono },
+          ...(safeEmail ? { email: safeEmail } : {}),
         },
         back_urls: {
           success: `${siteUrl}/pago/exitoso`,
