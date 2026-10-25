@@ -1,118 +1,197 @@
-# Bodega Dnavits — tienda en línea
+# 🍻 Bodega Dnavits — Plataforma E-commerce & Domicilios Express
 
-Landing page + tienda + panel de administración para vender gaseosas, agua y
-bebidas, construido con Next.js 14 y Supabase.
+Plataforma de comercio electrónico de alto rendimiento para venta y entrega de licores, cervezas, gaseosas y bebidas frías en Medellín y el Valle de Aburrá. Construida sobre **Next.js 16 (App Router)**, **React 18**, **Tailwind CSS**, **Supabase (PostgreSQL)** y pasarela **Mercado Pago (Checkout Pro)**.
 
-## 1. Configurar Supabase
+Desplegada en producción en [Vercel](https://bodega-borrador.vercel.app/).
 
-1. En tu proyecto de Supabase, ve a **SQL Editor** y pega el contenido de
-   `supabase/schema.sql`. Esto crea las tablas y activa Row Level Security
-   (nadie puede leer o escribir datos que no le correspondan, ni siquiera
-   llamando a la base de datos directamente).
-2. Ve a **Project Settings > API** y copia la `Project URL` y la `anon public key`.
-3. Copia `.env.example` a `.env.local` y pega esos dos valores.
-4. Regístrate en la tienda una vez que esté corriendo (paso 3 abajo), luego
-   en el SQL Editor ejecuta:
-   ```sql
-   update profiles set role = 'admin' where id = 'tu-user-id';
-   ```
-   Tu `user-id` lo ves en **Authentication > Users**. Así te conviertes en
-   administrador y puedes entrar a `/admin`.
+---
 
-## 2. Instalar y correr en tu computador
+## 🚀 Arquitectura Tecnológica
+
+* **Framework:** Next.js 16.4.3 con App Router, React Server Components y Server Actions.
+* **Base de Datos & Auth:** Supabase (PostgreSQL 15+) con Row Level Security (RLS) y autenticación basada en sesiones JWT.
+* **Diseño & UI:** Tailwind CSS v3 con paleta tokenizada *Light Portrait Style* inspirada en el estándar de Shopify (`bg-canvas`, `bg-surface`, `text-ink`, `border-hairline`, `shadow-portrait`). Cero librerías externas de íconos (100% SVG puro in-line optimizado).
+* **Pasarela de Pagos:** Mercado Pago SDK v2 (Checkout Pro con webhook HMAC SHA-256 e idempotencia transaccional).
+* **Correos Transaccionales:** Resend API (código OTP de 6 dígitos y confirmación de compra).
+* **Procesamiento de Archivos:** Hoja de cálculo XLSX para importación masiva y exportación de pedidos.
+
+---
+
+## ✨ Características Principales
+
+### 🛒 Experiencia de Compra (Cliente)
+* **Catálogo Dinámico:** Categorías interactivas (Cervezas, Licores, Gaseosas, Aguas, Snacks, etc.), buscador en tiempo real y selector de cantidades.
+* **Carrusel de Fotos por Producto:** Hasta 3 imágenes de alta definición con miniaturas y puntitos de paginación (`object-contain`).
+* **Doble Modalidad de Checkout:**
+  1. **Pedido Directo por WhatsApp:** Envío de orden preformateada al WhatsApp de la bodega con recálculo de precios y descuento de stock en base de datos.
+  2. **Pasarela Mercado Pago Checkout Pro:** Tarjetas de crédito, débito, PSE, Efecty y saldo en cuenta de Mercado Pago con confirmación automática.
+* **Verificación OTP de 6 Dígitos:** Validación obligatoria de correo electrónico antes del pago para mitigar pedidos fraudulentos y bots.
+* **Horarios Dinámicos & WhatsApp Flotante:** Indicador reactivo en tiempo real de *Abierto/Cerrado* según el cronograma operativo configurado.
+* **Actualización en Caliente:** Componente `VersionChecker` que detecta nuevas versiones desplegadas en Vercel y ofrece actualización fluida con cuenta regresiva.
+
+### 👑 Panel de Administración (`/admin`)
+Protegido por doble barrera criptográfica (sesión JWT + `admin_whitelist`).
+* **Métricas Financieras Multitemporales:** Dashboard ejecutivo con recaudo y pedidos desglosados en:
+  - *Hoy*
+  - *Esta Semana* (lunes a domingo)
+  - *Semana Pasada*
+  - *Este Mes*
+  - *Mes Pasado*
+  - *Total Histórico*
+* **Gestión de Pedidos (`/admin/pedidos`):**
+  - Numeración natural y correlativa (`#1`, `#2`, `#3`...).
+  - Actualización reactiva del estado del pedido (*Pendiente*, *Confirmado*, *En Camino*, *Entregado*, *Cancelado*).
+  - Eliminación segura con control de integridad referencial.
+  - Exportación de pedidos a Excel (`.xlsx`) con desglose de productos y datos de entrega.
+* **Gestión de Catálogo (`/admin/productos`):**
+  - Creación y edición con hasta 3 imágenes por producto (previsualización y validación de dimensiones recomendadas).
+  - Carga Masiva desde Excel: Importa decenas de productos en segundos mediante plantillas `.xlsx`.
+  - Desinfección automática contra inyección de fórmulas o etiquetas HTML.
+* **Configuración Operativa (`/admin/configuracion`):**
+  - Ajuste de teléfonos de contacto y WhatsApp de atención.
+  - Costo de domicilio y pedido mínimo de entrega.
+  - Interruptor maestro de activación/desactivación de la pasarela de pagos.
+  - Gestión de usuarios autorizados en la lista blanca (`admin_whitelist`).
+* **Personalización de Marca (`/admin/personalizacion`):**
+  - Configuración de Logo y Favicon.
+  - Textos de banners, títulos de pestaña y viñetas del hero.
+  - Generador de horarios inteligentes automáticos.
+  - Vista previa en vivo de metadatos Open Graph para previsualizaciones en WhatsApp y redes sociales.
+
+---
+
+## 🛡️ Suite de Ciberseguridad Enterprise (Blindajes A, B, C, D)
+
+El proyecto cuenta con un blindaje multicapa de nivel bancario (A+ en Mozilla Observatory y cumplimiento estricto de OWASP Top 10):
+
+### 1. Blindaje A: Rate Limiting por IP (Anti-DDoS Capa 7 y Anti-Spam)
+Limitador de tasa con ventana deslizante por IP (`lib/rate-limit.ts`) activo en todos los endpoints de procesamiento:
+* `/api/checkout`: Máx. 12 pedidos/min.
+* `/api/payments/create`: Máx. 12 preferencias/min.
+* `/api/verificacion/enviar`: Máx. 5 envíos / 10 min (previene bombardeo de correos y saturación de cuota).
+* `/api/verificacion/confirmar`: Máx. 10 intentos / 5 min (anula ataques de fuerza bruta al código OTP).
+* `/api/admin/check`: Máx. 30 peticiones/min.
+* `/api/pedidos` y `/api/pedidos/[id]`: Máx. 30–60 peticiones/min.
+* `/api/payments/webhook`: Máx. 120 peticiones/min.
+
+### 2. Blindaje B: Cabeceras de Seguridad HTTP Globales (Grado A+)
+Configuradas en `next.config.js` para la totalidad de rutas del servidor:
+* `Strict-Transport-Security`: HSTS obligatorio durante 2 años (`max-age=63072000; includeSubDomains; preload`).
+* `X-Frame-Options: DENY`: Inmunidad absoluta contra ataques de Clickjacking.
+* `X-Content-Type-Options: nosniff`: Previene ejecución de código malicioso por confusión MIME.
+* `Referrer-Policy: strict-origin-when-cross-origin`: Oculta parámetros sensibles en tráfico saliente.
+* `Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()`: Bloquea APIs de hardware invasivas.
+* `X-XSS-Protection: 1; mode=block`: Filtro heurístico contra XSS reflejado.
+
+### 3. Blindaje C: Motor de Sanitización Exhaustivo (Anti-XSS e Inyecciones)
+Módulo centralizado en `lib/sanitize.ts` que desinfecta las entradas antes de tocar la base de datos:
+* `sanitizeText()`: Desinfecta entradas públicas de clientes (`nombre`, `direccion`, `notas`).
+* `stripHtml()`: Elimina etiquetas `<...>`, esquemas `javascript:` / `vbscript:` y eventos `on\w+=` en formularios de catálogo, administración e importación de Excel.
+* `sanitizeUrl()`: Permite únicamente protocolos seguros (`https://`, `http://` o rutas relativas `/...`), descartando URLs maliciosas.
+* `sanitizeEmail()` y `sanitizePhone()`: Normalización estricta por expresiones regulares.
+* Cero uso de `dangerouslySetInnerHTML` o `innerHTML` en toda la base de código.
+
+### 4. Blindaje D: Criptografía Segura, Control de Acceso y RLS
+* **Timing-Safe Equals:** Comparación de firmas criptográficas HMAC de Mercado Pago y códigos de verificación mediante `crypto.timingSafeEqual` en tiempo constante, neutralizando ataques por análisis de tiempo de respuesta (Timing Attacks).
+* **CSPRNG Nativo:** Generación de códigos OTP con `crypto.randomInt` (aleatoriedad criptográfica real, no predecible por motores V8).
+* **Protección Anti-Type Juggling:** Coerción estricta de tipos y validación de expresiones regulares (`/^\d{6}$/` y UUIDs) para evitar evasiones por inyección de objetos o arrays.
+* **Validación de Identidad de Correo:** Impide que usuarios autenticados soliciten o confirmen códigos para correos ajenos (evita uso del servidor como Open Relay).
+* **Autoridad Exclusiva de Precios:** Los precios enviados por el cliente son ignorados; el total a cobrar se recalcula siempre desde la base de datos.
+* **Row Level Security (RLS) en Supabase:**
+  - `admin_whitelist`: Restringida únicamente a usuarios autenticados.
+  - `productos` y `configuracion`: Lectura pública (`SELECT`), pero modificación/creación/borrado bloqueado por RLS a cualquier usuario fuera de la lista blanca de administradores.
+  - Rutas de procesamiento (`/api/checkout`, `/api/payments/webhook`) operan con cliente de servicio elevado (`createServiceClient()`), garantizando que la creación de pedidos y descuento de inventario nunca se bloqueen.
+
+---
+
+## ⚙️ Variables de Entorno
+
+Crea un archivo `.env.local` en la raíz del proyecto (basado en `.env.example`):
 
 ```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key # Privada, solo servidor
+
+# Mercado Pago
+MP_ACCESS_TOKEN=APP_USR-tu-access-token
+MP_WEBHOOK_SECRET=tu-webhook-secret-de-mercadopago
+
+# Resend (Correos Transaccionales)
+RESEND_API_KEY=re_tu_api_key
+
+# URL Base
+NEXT_PUBLIC_APP_URL=https://bodega-borrador.vercel.app
+```
+
+---
+
+## 🛠️ Instalación y Desarrollo Local
+
+```bash
+# 1. Clonar repositorio
+git clone https://github.com/Dnavits/bodega.git
+cd bodega
+
+# 2. Instalar dependencias
 npm install
+
+# 3. Iniciar entorno de desarrollo
 npm run dev
 ```
 
-Abre `http://localhost:3000`.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-## 3. Agregar tus productos, fotos, logo y favicon
-
-Entra a `/admin/productos` con tu cuenta admin y agrega tus gaseosas, agua,
-etc. Cada producto acepta hasta 3 fotos (se muestran con puntitos para
-pasar de una a otra en la tienda). Para las fotos, lo más simple es subir
-las imágenes a un servicio como Supabase Storage, Cloudinary o Imgur, y
-pegar aquí la URL.
-
-En `/admin/configuracion` puedes cambiar el logo (aparece en la barra de
-navegación) y el favicon (el ícono que aparece en la pestaña del navegador)
-de la misma forma, pegando una URL.
-
-También puedes reemplazar las imágenes de referencia del banner y
-"Quiénes somos" en `components/Hero.tsx` y `components/QuienesSomos.tsx`
-por las tuyas.
-
-> Si ya habías corrido `schema.sql` antes de esta versión, ejecuta
-> `supabase/migration_v2.sql` en el SQL Editor para actualizar tu base de
-> datos sin perder los productos que ya tengas cargados.
-
-## 4. Conectar el envío de correos (código de verificación y confirmación)
-
-El checkout envía un código de 6 dígitos al correo del cliente antes de dejarlo
-pagar (anti-bots), y un correo de confirmación cuando el pedido queda listo.
-
-1. Crea una cuenta gratis en https://resend.com
-2. Copia tu API key y pégala como `RESEND_API_KEY` en `.env.local`
-3. Mientras no la configures, el código de verificación aparece directamente
-   en la pantalla (solo en desarrollo) para que puedas probar todo el flujo
-   sin enviar correos de verdad.
-
-## 5. Conectar Wompi (cuando te registres)
-
-1. Crea tu cuenta comercial en https://comercios.wompi.co
-2. Copia tu llave pública y privada, y el "Events secret", y pégalas en
-   `.env.local` (ver `.env.example`).
-3. En `app/checkout/page.tsx` y `app/api/checkout/route.ts` hay comentarios
-   marcados `--- Punto de conexion con Wompi ---`: ahí se agrega el widget
-   de pago y la firma de integridad. Puedo hacer esa integración contigo en
-   cuanto tengas las llaves — es la última pieza que falta.
-
-## 6. Subir a GitHub
-
+Para compilar para producción:
 ```bash
-git init
-git add .
-git commit -m "Tienda Bodega Dnavits"
-git branch -M main
-git remote add origin https://github.com/tu-usuario/tu-repo.git
-git push -u origin main
+npm run build
+npm run start
 ```
 
-Luego puedes desplegarlo gratis en https://vercel.com conectando ese
-repositorio (Vercel detecta Next.js automáticamente).
+---
 
-## Seguridad implementada
+## 📦 Estructura del Proyecto
 
-- **Inyección SQL**: imposible — todas las consultas pasan por el cliente
-  de Supabase, que usa parámetros, nunca texto SQL armado a mano.
-- **Row Level Security**: cada tabla tiene reglas que la base de datos
-  aplica siempre, sin importar por dónde llegue la petición.
-- **Panel admin protegido en el servidor** (`middleware.ts`): el rol se
-  verifica contra la base de datos en cada visita, no solo en el navegador.
-- **Precios verificados en el servidor** (`app/api/checkout/route.ts`): el
-  total del pedido se recalcula con los precios reales de la base de datos,
-  nunca se confía en lo que mande el navegador.
-- **Contraseñas**: gestionadas y hasheadas por Supabase Auth, nunca
-  guardadas en texto plano por este código.
-- **Datos de tarjetas**: nunca pasan por tu servidor — Wompi los procesa
-  directamente en su propio checkout, cumpliendo PCI-DSS por ti.
-- **Anti-bots en el checkout**: nadie puede pagar sin verificar un código
-  enviado a su correo real, y esa verificación se revisa de nuevo en el
-  servidor al crear el pedido (nunca se confía en una bandera del navegador).
+```text
+bodega-store/
+├── app/
+│   ├── admin/                  # Módulos del Panel Administrativo
+│   │   ├── configuracion/      # Ajustes operativos y whitelist
+│   │   ├── pedidos/            # Monitor y exportación de pedidos
+│   │   ├── personalizacion/    # Horarios, branding y Open Graph
+│   │   ├── productos/          # Catálogo e importación Excel
+│   │   └── layout.tsx          # Autenticación y bloqueo estricto de admins
+│   ├── api/                    # API Routes seguras
+│   │   ├── admin/check/        # Verificación de credenciales JWT
+│   │   ├── checkout/           # Creación de pedidos WhatsApp y descuento de stock
+│   │   ├── payments/           # Mercado Pago (create, webhook HMAC, verify)
+│   │   ├── pedidos/            # Endpoints protegidos de gestión de órdenes
+│   │   ├── verificacion/       # Generación y confirmación de códigos OTP
+│   │   └── version/            # Checkpoint de versión desplegada
+│   ├── checkout/               # Pantalla de checkout del cliente
+│   ├── login/                  # Autenticación de administradores y clientes
+│   ├── pago/[status]/          # Confirmación de pago Mercado Pago
+│   ├── layout.tsx              # Layout raíz con fuentes y metadatos
+│   └── page.tsx                # Tienda principal y catálogo
+├── components/                 # Componentes React reutilizables (SVGs puros)
+├── lib/
+│   ├── admin-auth.ts           # Validación de roles y whitelist
+│   ├── constants.ts            # Categorías y constantes
+│   ├── email.ts                # Conector Resend
+│   ├── image-utils.ts          # Normalización y optimización de imágenes
+│   ├── rate-limit.ts           # Motor de Rate Limiting por IP
+│   ├── sanitize.ts             # Motor de sanitización estricto anti-XSS
+│   ├── site-config.ts          # Caché y lectura de configuración
+│   └── supabase/               # Clientes Supabase (browser, server y service role)
+├── supabase/
+│   ├── schema.sql              # Estructura de tablas y políticas RLS
+│   └── migration_v2.sql        # Migraciones incrementales
+└── next.config.js              # Cabeceras HTTP de seguridad Grado A+
+```
 
-## El flujo de compra
+---
 
-1. **Domicilio**: dirección, edificio/apto, barrio y ciudad.
-2. **Datos de contacto**: nombre, apellido, teléfono y correo, con código
-   de verificación de 6 dígitos enviado por correo.
-3. **Resumen**: todos los datos y el total, con botones para volver a
-   cambiar el domicilio o continuar al pago.
-4. **Pago**: aquí se conecta Wompi cuando tengas tus llaves. Mientras
-   tanto, el pedido queda registrado como pendiente y se envía un correo
-   de confirmación avisando que llega en 1 a 2 días hábiles.
+## 📄 Licencia
 
-Recomendado antes de salir a producción: activa HTTPS forzado y cabeceras
-de seguridad en Vercel (vienen por defecto), y considera activar
-verificación en dos pasos para tu cuenta de administrador en Supabase Auth.
+Desarrollado para **Bodega Dnavits**. Todos los derechos reservados © 2026.
