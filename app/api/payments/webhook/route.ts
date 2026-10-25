@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { createServiceClient } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 // Verifica la firma HMAC que Mercado Pago envía en cada notificación.
 // Requiere la variable MP_WEBHOOK_SECRET (Mercado Pago → Webhooks → secret).
 // Si no está configurada, se omite la verificación (modo desarrollo).
-async function verificarFirmaMP(request: Request, rawBody: string): Promise<boolean> {
+async function verificarFirmaMP(request: Request, _rawBody: string): Promise<boolean> {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) return true; // Sin secret configurado, se permite (sandbox/dev)
 
@@ -28,18 +30,24 @@ async function verificarFirmaMP(request: Request, rawBody: string): Promise<bool
   if (!ts || !v1) return false;
 
   const signedManifest = `${manifest}${ts}`;
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(signedManifest));
-  const computed = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const hmac = crypto.createHmac("sha256", secret);
+  hmac.update(signedManifest);
+  const computed = hmac.digest("hex");
 
-  return computed === v1;
+  // Comparación en tiempo constante para evitar Timing Attacks en la firma criptográfica
+  if (computed.length !== v1.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(v1));
 }
 
 export async function POST(request: Request) {
   try {
+    // Protección contra saturación DoS/L7 en el endpoint de webhook
+    const ip = getClientIp(request);
+    const { success } = checkRateLimit(`mp_webhook_${ip}`, 120, 60 * 1000);
+    if (!success) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    }
+
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
       return NextResponse.json({ error: "No configurado" }, { status: 503 });

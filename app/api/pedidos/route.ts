@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getAdminAccess } from "@/lib/admin-auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const { success } = checkRateLimit(`pedidos_get_${ip}`, 60, 60 * 1000);
+    if (!success) {
+      return NextResponse.json({ error: "Demasiadas peticiones. Por favor espera." }, { status: 429 });
+    }
+
     // 1. Validar que la petición provenga de un Administrador Autenticado
     const authClient = await createClient();
     const { data: { user } } = await authClient.auth.getUser();
