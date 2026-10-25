@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { sanitizeText, sanitizeEmail, sanitizePhone } from "@/lib/sanitize";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -15,11 +15,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createClient();
-
+  const authClient = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await authClient.auth.getUser();
+
+  // Usar cliente de servicio para operaciones seguras de pedidos e inventario
+  const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceClient() : authClient;
 
   const { items, direccion, metodo_pago, notas } = await request.json();
 
