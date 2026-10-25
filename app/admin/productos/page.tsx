@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PlusIcon, TrashIcon, BeerIcon, ExcelIcon, UploadIcon, RulerIcon, PencilIcon } from "@/components/Icons";
 import { CATEGORIAS_PRODUCTOS, CATEGORIA_LABELS } from "@/lib/constants";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
+import { stripHtml, sanitizeUrl } from "@/lib/sanitize";
 import * as XLSX from "xlsx";
 
 type Producto = {
@@ -172,20 +173,22 @@ export default function AdminProductos() {
 
       const nuevosProductos: any[] = [];
       for (const r of rows) {
-        const nombre = (
+        const nombreRaw = (
           r["Nombre del Producto"] ||
           r["Nombre"] ||
           r["nombre"] ||
           r["Producto"] ||
           ""
-        ).toString().trim();
+        ).toString();
+        const nombre = stripHtml(nombreRaw, 150);
 
-        const categoria = (
+        const categoriaRaw = (
           r["Categoría"] ||
           r["Categoria"] ||
           r["categoria"] ||
           "otros"
-        ).toString().trim().toLowerCase();
+        ).toString().toLowerCase();
+        const categoria = stripHtml(categoriaRaw, 50);
 
         const precioRaw = r["Precio"] || r["precio"] || r["Precio de Venta"];
         const precio = parseInt(precioRaw, 10);
@@ -200,12 +203,13 @@ export default function AdminProductos() {
         const stockRaw = r["Stock"] || r["stock"] || r["Inventario"] || 0;
         const stock = parseInt(stockRaw, 10);
 
-        const descripcion = (
+        const descripcionRaw = (
           r["Descripción"] ||
           r["Descripcion"] ||
           r["descripcion"] ||
           ""
-        ).toString().trim() || null;
+        ).toString();
+        const descripcion = stripHtml(descripcionRaw, 1000) || null;
 
         if (!nombre || isNaN(precio) || precio <= 0) continue;
 
@@ -283,16 +287,16 @@ export default function AdminProductos() {
     setCargando(true);
 
     const imagenes = [form.imagen_url_1, form.imagen_url_2, form.imagen_url_3]
-      .map((u) => u.trim())
+      .map((u) => sanitizeUrl(u))
       .filter(Boolean);
 
     const payload: any = {
-      nombre: form.nombre.trim(),
-      descripcion: form.descripcion.trim() || null,
+      nombre: stripHtml(form.nombre, 150),
+      descripcion: form.descripcion ? stripHtml(form.descripcion, 1000) : null,
       precio: parseInt(form.precio, 10),
       precio_comparacion: form.precio_comparacion ? parseInt(form.precio_comparacion, 10) : null,
       stock: parseInt(form.stock, 10),
-      categoria: categoriaFinal,
+      categoria: stripHtml(categoriaFinal, 50),
       imagenes,
       activo: form.activo,
     };

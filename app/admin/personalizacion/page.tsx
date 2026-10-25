@@ -15,6 +15,7 @@ import {
   RefreshCwIcon,
 } from "@/components/Icons";
 import { processImageFile, IMAGE_SPECS } from "@/lib/image-utils";
+import { stripHtml, sanitizeUrl } from "@/lib/sanitize";
 
 
 function formatearHora12h(hora24: string): string {
@@ -258,25 +259,25 @@ export default function AdminPersonalizacion() {
     }
 
     const payload: any = {
-      nombre_bodega: nombreBodega.trim() || "Bodega Dnavits",
-      subtitulo_bodega: subtituloBodega.trim() || "Licores & Bebidas Heladas",
-      titulo_pestana: tituloPestana.trim() || null,
-      banner_anuncio: bannerAnuncio.trim() || null,
-      logo_url: logoUrl.trim() || null,
-      favicon_url: faviconUrl.trim() || null,
-      hero_badge: heroBadge.trim() || "DOMICILIOS EXPRESS · MEDELLÍN",
-      hero_titulo: heroTitulo.trim() || "Tus bebidas heladas,",
-      hero_subtitulo_rainbow: heroSubtituloRainbow.trim() || "en minutos",
-      hero_descripcion: heroDescripcion.trim() || "",
-      hero_features: heroFeatures,
-      mostrar_whatsapp_flotante: mostrarWhatsappFlotante,
-      horario_texto: horarioTexto.trim() || "Lunes a Domingo: 9:00 AM - 11:00 PM",
-      horario_inicio: horarioInicio.trim() || "09:00",
-      horario_fin: horarioFin.trim() || "23:00",
-      horario_dias: horarioDias,
-      meta_titulo: metaTitulo.trim() || null,
-      meta_descripcion: metaDescripcion.trim() || null,
-      meta_imagen_url: metaImagenUrl.trim() || null,
+      nombre_bodega: stripHtml(nombreBodega, 100) || "Bodega Dnavits",
+      subtitulo_bodega: stripHtml(subtituloBodega, 120) || "Licores & Bebidas Heladas",
+      titulo_pestana: stripHtml(tituloPestana, 100) || null,
+      banner_anuncio: stripHtml(bannerAnuncio, 200) || null,
+      logo_url: sanitizeUrl(logoUrl) || null,
+      favicon_url: sanitizeUrl(faviconUrl) || null,
+      hero_badge: stripHtml(heroBadge, 80) || "DOMICILIOS EXPRESS · MEDELLÍN",
+      hero_titulo: stripHtml(heroTitulo, 120) || "Tus bebidas heladas,",
+      hero_subtitulo_rainbow: stripHtml(heroSubtituloRainbow, 80) || "en minutos",
+      hero_descripcion: stripHtml(heroDescripcion, 300) || "",
+      hero_features: (heroFeatures || []).map((f) => stripHtml(f, 100)),
+      mostrar_whatsapp_flotante: Boolean(mostrarWhatsappFlotante),
+      horario_texto: stripHtml(horarioTexto, 150) || "Lunes a Domingo: 9:00 AM - 11:00 PM",
+      horario_inicio: stripHtml(horarioInicio, 10) || "09:00",
+      horario_fin: stripHtml(horarioFin, 10) || "23:00",
+      horario_dias: Array.isArray(horarioDias) ? horarioDias.map((d) => stripHtml(d, 20)) : [],
+      meta_titulo: stripHtml(metaTitulo, 100) || null,
+      meta_descripcion: stripHtml(metaDescripcion, 300) || null,
+      meta_imagen_url: sanitizeUrl(metaImagenUrl) || null,
     };
 
     let updateError: any = null;

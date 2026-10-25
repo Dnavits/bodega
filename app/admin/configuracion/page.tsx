@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SettingsIcon, PlusIcon, ShieldAdminIcon, PaletteIcon, DatabaseIcon, CreditCardIcon, AlertCircleIcon } from "@/components/Icons";
+import { stripHtml, sanitizeEmail, sanitizePhone } from "@/lib/sanitize";
 
 type WhitelistUser = {
   id: string;
@@ -266,9 +267,9 @@ export default function AdminConfiguracion() {
     }
 
     const payload: any = {
-      telefono_contacto: telefonoContacto.trim() || null,
-      whatsapp_pedidos: whatsappPedidos.trim() || null,
-      direccion_bodega: direccionBodega.trim() || null,
+      telefono_contacto: sanitizePhone(telefonoContacto) || null,
+      whatsapp_pedidos: sanitizePhone(whatsappPedidos) || null,
+      direccion_bodega: stripHtml(direccionBodega, 200) || null,
       costo_domicilio: parseInt(costoDomicilio, 10) || 0,
       pedido_minimo: parseInt(pedidoMinimo, 10) || 0,
     };
@@ -329,14 +330,18 @@ export default function AdminConfiguracion() {
 
   async function agregarAdminWhitelist(e: React.FormEvent) {
     e.preventDefault();
-    if (!nuevoEmail.trim()) return;
+    const cleanEmail = sanitizeEmail(nuevoEmail);
+    if (!cleanEmail) {
+      alert("Por favor ingresa un correo electrónico válido.");
+      return;
+    }
 
     const { error: insertError } = await supabase
       .from("admin_whitelist")
       .insert([
         {
-          email: nuevoEmail.trim().toLowerCase(),
-          nombre: nuevoNombre.trim() || "Administrador",
+          email: cleanEmail,
+          nombre: stripHtml(nuevoNombre, 100) || "Administrador",
           activo: true,
         },
       ]);
