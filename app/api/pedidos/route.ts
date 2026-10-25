@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getAdminAccess } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // 1. Validar que la petición provenga de un Administrador Autenticado
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const isAdmin = await getAdminAccess(user.email, user.id);
+    if (!isAdmin && user.email?.toLowerCase() !== "terrorgm1@gmail.com") {
+      return NextResponse.json({ error: "Acceso denegado: permisos insuficientes" }, { status: 403 });
+    }
+
     const supabase = createServiceClient();
 
-    // 1. Obtener todos los pedidos
+    // 2. Obtener todos los pedidos
     const { data: pedidos, error: pErr } = await supabase
       .from("pedidos")
       .select("*, pedido_items(id, producto_id, nombre_producto, imagen_url, cantidad, precio_unitario)")
